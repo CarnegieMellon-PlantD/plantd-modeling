@@ -2,7 +2,15 @@
 
 This repository contains several convenience functions that do data analysis on PlantD's measured data
 
-1. Set up the following environment variables
+You can do four things with it (only build is implemented):
+- *build* Build a model (aka twin) from experiments
+- *end_detector* Check when an experiment ended for real
+- *forecast* Build a forecast of INPUT data to a model over a year
+- *simulate* Simulate a pipeline's behavior under a particular forecast.
+
+Steps to run any of these:
+
+1. Common variables for most functions: 
     - EXPERIMENT_NAMES
         - comma-separated list of experiments, as namespace.name
     - TWIN_NAME
@@ -19,15 +27,15 @@ This repository contains several convenience functions that do data analysis on 
     - CONTROLLER_VERSION
         - currently v1alpha1
 
-2. To build a model from a set of experiments, call `python make.py build`
+2. *build* To build a model from a set of experiments, call `python make.py build`
     - This writes model parameters to redis, with key `twin:$TWIN_NAME:model_params`
 
-3. To determine when a pipeline may have finished processing the data that was passed in in an experiment, call `python make.py end_detector`
+3. *end_detector* To determine when a pipeline may have finished processing the data that was passed in in an experiment, call `python make.py end_detector`
     - EXPERIMENT_NAMES should contain just one experiment namespace.name
     - TWIN_NAME is ignored for this call
     - This writes the end time to redis, with key `experiment:namespace.name:detected_end`
 
-4. To create a forecast, set up the forecasting parameters as a JSON record in environment variable `FORECAST_PARAMETERS`, then call `python make.py forecast`.
+4. *forecast* To create a forecast, set up the forecasting parameters as a JSON record in environment variable `FORECAST_PARAMETERS`, then call `python make.py forecast`.
     - FORECAST_PARAMETERS holds a json record with the following fields:
         - start_row_cnt - int
         - corrections - array of 12 values for each of four metrics:
@@ -45,7 +53,7 @@ This repository contains several convenience functions that do data analysis on 
     - Running this will generate an array of 8760 in redis with keys `forecast:namespace.name:inputs`  
     - `forecast:namespace.name:metadata` will be a record containing some metadata and summary statistics about the forecast; things like max_rps or total_records_sent for example
 
-5. To run a simulation,
+5. *simulate* To run a simulation,
     - FORECAST_NAME - (string, a reference to a forecast name)
     - TWIN_NAME - (string, a reference to a twin name)
     - SIMULATION_NAME - the name of this simulation
