@@ -11,8 +11,6 @@ You can do four things with it (only build is implemented):
 Steps to run any of these:
 
 1. Common variables for most functions: 
-    - EXPERIMENT_NAMES
-        - comma-separated list of experiments, as namespace.name
     - TWIN_NAME
         - namespace.name of the model to be constructed from the experiments
     - REDIS_HOST
@@ -20,18 +18,18 @@ Steps to run any of these:
     - PROMETHEUS_HOST
     - PROMETHEUS_PASSWORD
         - if missing, no password is sent
-    - KUBERNETES_SERVICE_ADDRESS
-        - if missing default is https://kubernetes.default.svc
-    - GROUP
-        - use windtunnel.plantd.org
-    - CONTROLLER_VERSION
-        - currently v1alpha1
+    - EXPERIMENTS
+        - json dictionary, where the keys are the names of experiments in the form namespace.name, and the values are the records containing describe information for all experiments 
+    - LOADPATTERNS
+        - json dictionary of all load patterns mentioned in the EXPERIMENTS. 
+
+
 
 2. *build* To build a model from a set of experiments, call `python make.py build`
     - This writes model parameters to redis, with key `twin:$TWIN_NAME:model_params`
 
 3. *end_detector* To determine when a pipeline may have finished processing the data that was passed in in an experiment, call `python make.py end_detector`
-    - EXPERIMENT_NAMES should contain just one experiment namespace.name
+    - EXPERIMENTS should contain just one experiment 
     - TWIN_NAME is ignored for this call
     - This writes the end time to redis, with key `experiment:namespace.name:detected_end`
 
