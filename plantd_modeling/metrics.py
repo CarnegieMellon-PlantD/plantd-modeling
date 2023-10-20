@@ -4,22 +4,23 @@ import requests
 import json
 import pandas as pd
 
+REALTIME_CALLS_QUERY = 'calls_total{{job="{params.name}", namespace="{params.namespace}"}}'
+REALTIME_THROUGHPUT_QUERY = 'sum by(span_name)(irate(calls_total{{status_code="STATUS_CODE_UNSET", job="{params.name}", namespace="{params.namespace}"}}[{step}s]))'
+REALTIME_LATENCY_QUERY = 'irate(duration_milliseconds_sum{status_code="STATUS_CODE_UNSET", job="{params.name}", namespace="{params.namespace}"}[30s]) / irate(duration_milliseconds_count{status_code="STATUS_CODE_UNSET", job="{params.name}", namespace="{params.namespace}"}[30s])'
+
 class Metrics:
     def __init__(self, prometheus_host) -> None:
         self.prometheus_host = prometheus_host
         
     def get_metrics(self, experiment: Experiment):
         url = f"{self.prometheus_host}/api/v1/query_range"
-        start_ts = experiment.start_time.timestamp()
-        end_ts = experiment.end_time.timestamp()
-        # Kluge for testing
-        start_ts = datetime.now().timestamp() - 3600
+        step_interval = 30 # 180
+        start_ts = experiment.start_time.timestamp() - step_interval*15
+        #end_ts = experiment.end_time.timestamp()
         end_ts = datetime.now().timestamp()
-        step_interval = 60
-        query = f'calls_total{{job="{experiment.experiment_name.name}", namespace="{experiment.experiment_name.namespace}"}}'
+
+        query = REALTIME_THROUGHPUT_QUERY.format(params=experiment.experiment_name, step={step_interval})
         print(query, datetime.utcfromtimestamp(start_ts), datetime.utcfromtimestamp(end_ts), step_interval)
-        # kluge for testing
-        #query = f'calls_total'
         print(url)  
         print(query)
     
@@ -32,8 +33,6 @@ class Metrics:
         dfs = []
         for result in response.json()['data']['result']:
             span = result['metric']['span_name']
-            if result['metric']['status_code'] != 'STATUS_CODE_UNSET':
-                span += f"_{result['metric']['status_code']}"
             df = pd.DataFrame(result['values'], columns=['time', span])
             df['time'] = pd.to_datetime(df['time'], unit='s')
             df.set_index('time', inplace=True)

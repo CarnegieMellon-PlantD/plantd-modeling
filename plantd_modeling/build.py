@@ -9,10 +9,8 @@ from plantd_modeling import metrics
 
 
 def build_model():
-    experiment_names = os.environ['EXPERIMENT_NAMES']
-    experiment_names = experiment_names.split(',')
-    experiment_names = [name.strip() for name in experiment_names]
-    experiment_names = []   # wildcard for development
+    experiments = os.environ['EXPERIMENTS']
+    load_patterns = os.environ['LOAD_PATTERNS']
     
     group = os.environ['GROUP']
     controller_version = os.environ['CONTROLLER_VERSION']
@@ -21,32 +19,33 @@ def build_model():
     redis_password = os.environ['REDIS_PASSWORD']
     prometheus_host = os.environ['PROMETHEUS_HOST']
     prometheus_password = os.environ['PROMETHEUS_PASSWORD']
-    kubernetes_service_address = os.environ['KUBERNETES_SERVICE_ADDRESS']
     
     
-    config = configuration.ConfigurationConnection(kubernetes_service_address, group, controller_version)
-    experiment_metadata = config.get_experiment_metadata(experiment_names)
+    config = configuration.ConfigurationConnectionDirect(experiments, load_patterns)
     
     
-    for exp in experiment_metadata:
+    for exp in config.experiments:
         print(exp)
-        print(f"      Start time  {experiment_metadata[exp].start_time.isoformat()}")
-        print(f"      End time  {experiment_metadata[exp].end_time.isoformat()}")
-        print(f"      Load Duration  {experiment_metadata[exp].duration}")
-        print(f"      Pipeline  {experiment_metadata[exp].pipeline_name}")
-        print(f"      Load patterns  {','.join(experiment_metadata[exp].load_pattern_names)}")
-        lp_upload = experiment_metadata[exp].load_patterns["upload"]
+        print(f"      Start time  {config.experiments[exp].start_time.isoformat()}")
+        print(f"      End time  {config.experiments[exp].end_time.isoformat()}")
+        print(f"      Load Duration  {config.experiments[exp].duration}")
+        print(f"      Pipeline  {config.experiments[exp].pipeline_name}")
+        print(f"      Load patterns  {','.join(config.experiments[exp].load_pattern_names)}")
+        lp_upload = config.experiments[exp].load_patterns["upload"]
         print(f"      1st Load pattern duration  {lp_upload.total_duration}")
         print(f"      1st Load pattern records sent  {lp_upload.total_records}")
     
     # Get metrics from Prometheus
     prom = metrics.Metrics(prometheus_host)
     
-    for experiment_name in experiment_metadata:
+    for experiment_name in config.experiments:
         print(experiment_name)
-        experiment_metadata[experiment_name].add_metrics(
-            prom.get_metrics(experiment_metadata[experiment_name]))
-        print(experiment_metadata[experiment_name].metrics)
+        try:
+            config.experiments[experiment_name].add_metrics(
+                prom.get_metrics(config.experiments[experiment_name]))
+        except requests.exceptions.HTTPError as e:
+            print(f"Error getting metrics for {experiment_name}: {e.response.text}")
+        print(config.experiments[experiment_name].metrics)
 
-    return experiment_metadata
+    return config.experiments
 

@@ -7,6 +7,8 @@ from dateutil.parser import parse
 import re
 from typing import Any, List, Dict
 from pandas import DataFrame
+import pandas as pd
+import io
 
 
 def parse_duration(s : str) -> timedelta:
@@ -107,7 +109,7 @@ class Experiment:
             "pipeline_name": str(self.pipeline_name),
             "load_patterns": { lp: self.load_patterns[lp].serialize() for lp in self.load_patterns },
             "pipeline": self.pipeline.serialize() if self.pipeline else None,
-            "metrics": self.metrics.to_json()
+            "metrics": self.metrics.to_csv()
         }
     
     @classmethod
@@ -121,7 +123,7 @@ class Experiment:
         exp.pipeline_name = KubernetesName(json_rec["pipeline_name"])
         exp.load_patterns = {lp : LoadPattern.deserialize(json_rec["load_patterns"][lp]) for lp in json_rec["load_patterns"]}
         exp.pipeline = Pipeline.deserialize(json_rec["pipeline"]) if json_rec["pipeline"] else None
-        exp.metrics = DataFrame(json.loads(json_rec["metrics"]))
+        exp.metrics = reconstructed_df = pd.read_csv(io.StringIO(json_rec["metrics"]), index_col=0, parse_dates=True)
         return exp
     
     def save_file(self, fname):
@@ -153,13 +155,24 @@ class Pipeline:
         return p
     
 
+class ConfigurationConnectionDirect:
+    def __init__(self, experiments, load_patterns):
+        self.experiments = {KubernetesName(n): Experiment(e) for (n,e) in experiments.items()}
+        self.load_patterns = {KubernetesName(n): LoadPattern(e) for (n,e) in load_patterns.items()}
+        
+    def get_experiment_metadata(self):
+        return self.experiments
 
+    def get_load_pattern_metadata(self, loadpattern_name: KubernetesName):
+        return self.load_patterns[loadpattern_name]
 
-class ConfigurationConnection:
+class ConfigurationConnectionKubernetes:
     def __init__(self, kubernetes_service_address, group, controller_version):
         self.kubernetes_service_address = kubernetes_service_address
         self.group = group
         self.controller_version = controller_version
+        self.raw_experiments = {}
+        self.raw_load_patterns = []
 
     def get_experiment_metadata(self, experiment_names: List[KubernetesName] = []):
         # Get start and end times of experiments
@@ -168,6 +181,7 @@ class ConfigurationConnection:
         response = requests.get(query_url, verify=False, stream=False)
         response.raise_for_status()
         experiments = response.json()
+        self.raw_experiments = experiments
         for exp in experiments["items"]:
             exp_obj = Experiment(exp)
             if exp_obj.experiment_name in experiment_names or len(experiment_names) == 0:
@@ -184,6 +198,7 @@ class ConfigurationConnection:
         response = requests.get(query_url, verify=False, stream=False)
         response.raise_for_status()
         lp = response.json()
+        self.raw_load_patterns.append(lp)
         return LoadPattern(lp)
 
     def get_pipeline_metadata(self, pipeline_name: KubernetesName):
