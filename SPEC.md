@@ -1,59 +1,53 @@
 # Using these modeling functions
 
-This repository contains several convenience functions that do data analysis on PlantD's measured data
+This repository contains a convenience function that does data analysis, or experiment end detection, on PlantD's measured data
 
-You can do four things with it (only build is implemented):
-- *build* Build a model (aka twin) from experiments
-- *end_detector* Check when an experiment ended for real
-- *forecast* Build a forecast of INPUT data to a model over a year
-- *simulate* Simulate a pipeline's behavior under a particular forecast.
+Set up the following environment variables:
 
-Steps to run any of these:
-
-1. Common variables for most functions: 
     - TWIN_NAME
         - namespace.name of the model to be constructed from the experiments
+    - MODEL_TYPE
+        - simple, autoscaling, or quickscaling
+    - SIM_NAME
+        - A name for the simulation to be run 
+    - TRAFFIC_MODEL_NAME
+        - The traffic model to use.  See samples directory for an example. 
+        - This will be looked up from redis key `plantd:trafficmodel_params:$TRAFFIC_MODEL`
     - REDIS_HOST
     - REDIS_PASSWORD
     - PROMETHEUS_HOST
     - PROMETHEUS_PASSWORD
         - if missing, no password is sent
+    - COST_PROMETHEUS_ENDPOINT  
+        - This will eventually go away, when the opencost prometheus is merged with the windtunnel prometheus
+    - OPENCOST_ENDPOINT
+        - Endpoint of the opencost service
+    - PIPELINE_LABEL_KEY
+    - PIPELINE_LABEL_VALUE
+        - Used by opencost.  Optional.
+    - EXPERIMENT_NAMES
+        - comma-separated list of namespace.name of each experiment to use when constructing a digital twin
     - EXPERIMENTS
         - json dictionary, where the keys are the names of experiments in the form namespace.name, and the values are the records containing describe information for all experiments 
+        - Note that experiments not listed in EXPERIMENT_NAMES will be omitted from analysis (so it's OK to dump every experiment here; they'll just be ignored)
+        - See samples directory for an example
     - LOADPATTERNS
         - json dictionary of all load patterns mentioned in the EXPERIMENTS. 
+        - Note that load patterns not listed in EXPERIMENTs will be ignored (so it's OK to dump all load patterns here; they'll just be ignored)
+        - See samples directory for an example
 
-
-
-2. *build* To build a model from a set of experiments, call `python make.py build`
-    - This writes model parameters to redis, with key `twin:$TWIN_NAME:model_params`
+2. *sim_all* To build a model from a set of experiments, simulate the traffic model, and run the twin on the model, call `python make.py sim_all`
+    - This writes the following to redis:
+        - `plantd:trafficmodel_params:$TRAFFIC_MODEL`  copy of the traffic model passed in
+        - `plantd:trafficmodel_prediction:$TRAFFIC_MODEL`
+        - `plantd:twinmodel:$TWIN_NAME`  Parameters describing the digital twin created from the experiments
+        - `plantd:experiment_cost:$EXPERIMENT_NAME`  Cache of cost logs retrieved from opencost
+        - `plantd:metrics:$EXPERIMENT_NAME`  This will be a cache of data scraped from prometheus for each experiment (since prometheus data disappears after a few days)
+        - `plantd:simulation_traffic:$SIM_NAME` contains a CSV string with a timeseries of all simulation results
+        - `plantd:simulation_summary:$SIM_NAME` Contains summary of simulation data over the whole simluation year
 
 3. *end_detector* To determine when a pipeline may have finished processing the data that was passed in in an experiment, call `python make.py end_detector`
+    - not implemented yet
     - EXPERIMENTS should contain just one experiment 
-    - TWIN_NAME is ignored for this call
-    - This writes the end time to redis, with key `experiment:namespace.name:detected_end`
+    - This writes the end time to redis, with key `plantd:experiment:namespace.name:detected_end`
 
-4. *forecast* To create a forecast, set up the forecasting parameters as a JSON record in environment variable `FORECAST_PARAMETERS`, then call `python make.py forecast`.
-    - FORECAST_PARAMETERS holds a json record with the following fields:
-        - start_row_cnt - int
-        - corrections - array of 12 values for each of four metrics:
-            - growth
-            - row_cnt_seasonal_correction
-            - num_vehicles_seasonal_correction
-            - num_trips_seasonal_correction
-        - correction_weekly - array of 168 values for each of 3 metrics
-            - row_cnt_weekly_correction
-            - num_vehicles_weekly_correction
-            - num_trips_weekly_correction
-        - monthly_rate  - float
-        - yearly_growth_rate - float
-    - FORECAST_NAME - namespace.name
-    - Running this will generate an array of 8760 in redis with keys `forecast:namespace.name:inputs`  
-    - `forecast:namespace.name:metadata` will be a record containing some metadata and summary statistics about the forecast; things like max_rps or total_records_sent for example
-
-5. *simulate* To run a simulation,
-    - FORECAST_NAME - (string, a reference to a forecast name)
-    - TWIN_NAME - (string, a reference to a twin name)
-    - SIMULATION_NAME - the name of this simulation
-    - Running this will generate a set of metrics in redis with keys `simulation:$SIMULATION_NAME:<metric>`  
-    - `simulation:$SIMULATION_NAME:metadata` will be a record containing some metadata and summary statistics about the simulation; things like max_hourly_latency for exampleThis will put with metrics like cost, throughput, latency.  Each will be 8760 values, representing the hours of a year

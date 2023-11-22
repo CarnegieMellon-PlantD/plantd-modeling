@@ -9,6 +9,7 @@ from typing import Any, List, Dict
 from pandas import DataFrame
 import pandas as pd
 import io
+import shlex
 
 
 def parse_duration(s : str) -> timedelta:
@@ -48,6 +49,7 @@ class LoadPattern:
     def __init__(self, lp):
         if len(lp) == 0:
             return
+        self.raw_k8s_defn = lp
         self.load_pattern_name = KubernetesName.from_json(lp["metadata"])
         self.spec = lp["spec"]   # stages=[{duration:3m, target=30}], startRate=10, timeUnit=1s
         self.total_duration = 0
@@ -85,9 +87,11 @@ class Experiment:
     def __init__(self, experiment):
         if len(experiment) == 0:
             return
+        self.raw_k8s_defn = experiment
         self.experiment_name = KubernetesName.from_json(experiment['metadata'])
         self.start_time = parse(experiment['status']['startTime'])
-        self.end_time = parse_duration(experiment['status']['duration']['upload']) + self.start_time
+        self.upload_endpoint = list(experiment['status']['duration'].keys())[0]
+        self.end_time = parse_duration(experiment['status']['duration'][self.upload_endpoint]) + self.start_time
         self.duration = self.end_time - self.start_time
         self.load_pattern_names = {lp["endpointName"]: KubernetesName.from_json(lp["loadPatternRef"]) 
                                    for lp in experiment['spec']['loadPatterns']}
@@ -115,7 +119,8 @@ class Experiment:
     @classmethod
     def deserialize(cls, json_rec):
         exp = cls({})
-        exp.experiment_name = KubernetesName(json_rec["experiment_name"])
+        import pdb; pdb.set_trace()
+        exp.experiment_name = KubernetesName(json_rec["metadata"])
         exp.start_time = parse(json_rec["start_time"])
         exp.end_time = parse(json_rec["end_time"])
         exp.duration = timedelta(seconds=json_rec["duration"])
@@ -153,10 +158,33 @@ class Pipeline:
         p.pipeline_name = KubernetesName(json_rec["pipeline_name"])
         p.details = json_rec["details"]
         return p
-    
+
+class ConfigurationConnectionEnvVars:
+    def __init__(self):
+        self.experiments  = {}
+        self.load_patterns = {}
+        experiment_names = os.environ["EXPERIMENT_NAMES"].split(",")
+        load_pattern_names = os.environ["LOAD_PATTERN_NAMES"].split(",")
+        exp_raw = json.loads(os.environ[f"EXPERIMENT_METADATA"])
+        lp_raw = json.loads(os.environ[f"LOAD_PATTERN_METADATA"])
+        for item in exp_raw["items"]:
+            experiment_name = KubernetesName.from_json(item["metadata"])
+            self.experiments[experiment_name] = Experiment(item)
+        for item in lp_raw["items"]:
+            load_pattern_name = KubernetesName.from_json(item["metadata"])
+            self.load_patterns[load_pattern_name] = LoadPattern(item)
+        for exp in self.experiments.values():
+            exp.load_patterns = {k:self.load_patterns[v] for k,v in exp.load_pattern_names.items()}
+            #exp.pipeline = self.get_pipeline_metadata(exp.pipeline_name)
+        
+    def get_experiment_metadata(self):
+        return self.experiments
+
+    def get_load_pattern_metadata(self, loadpattern_name: KubernetesName):
+        return self.load_patterns[loadpattern_name]   
 
 class ConfigurationConnectionDirect:
-    def __init__(self, experiments, load_patterns):
+    def __init__(self, experiments, load_patterns, from_environment=False):
         self.experiments = {KubernetesName(n): Experiment(e) for (n,e) in experiments.items()}
         self.load_patterns = {KubernetesName(n): LoadPattern(e) for (n,e) in load_patterns.items()}
         
@@ -183,9 +211,14 @@ class ConfigurationConnectionKubernetes:
         experiments = response.json()
         self.raw_experiments = experiments
         for exp in experiments["items"]:
-            exp_obj = Experiment(exp)
-            if exp_obj.experiment_name in experiment_names or len(experiment_names) == 0:
-                experiment_metadata[exp_obj.experiment_name] = exp_obj
+            try:
+                exp_obj = Experiment(exp)
+                
+                if exp_obj.experiment_name in experiment_names or len(experiment_names) == 0:
+                    experiment_metadata[exp_obj.experiment_name] = exp_obj
+            except Exception as e:
+                print(f"Error processing experiment {exp['metadata']['name']}: {e}")
+                continue
 
         for exp in experiment_metadata.values():
             exp.load_patterns = {k:self.get_load_pattern_metadata(v) for k,v in exp.load_pattern_names.items()}
@@ -207,6 +240,17 @@ class ConfigurationConnectionKubernetes:
         response.raise_for_status()
         p = response.json()
         return Pipeline(pipeline_name)
+    
+    def write_to_environment(self):
+        with open("environment.env", "w") as f:
+            f.write(f"EXPERIMENT_NAMES={','.join([str(e) for e in self.get_experiment_metadata().keys()])}\n")
+            f.write(f"LOAD_PATTERN_NAMES={','.join([str(e) for e in self.get_load_pattern_metadata().keys()])}\n")
+            # Write each experiment's metadata to the environment
+            for e in self.get_experiment_metadata().values():
+                f.write(f"EXPERIMENT_METADATA_{e.experiment_name.dotted_name}={json.dumps(e.serialize())}'\n")
+            # Write each load pattern's metadata to the environment
+            for lp in self.get_load_pattern_metadata().values():
+                f.write(f"LOAD_PATTERN_METADATA_{lp.load_pattern_name.dotted_name}={json.dumps(lp.serialize())}'\n")
+            
 
 
-                

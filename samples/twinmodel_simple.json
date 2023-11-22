@@ -1,0 +1,1 @@
+{"model_type": "quickscaling", "fixed_hourcost": 0, "basemodel": "{\"model_type\": \"simple\", \"maxrate_rph\": 3.6283891547049443, \"per_vm_hourcost\": 0.02576053060872284, \"avg_latency_s\": 60.0, \"policy\": \"fifo\"}", "policy": "fifo"}

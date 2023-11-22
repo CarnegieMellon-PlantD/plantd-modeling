@@ -1,0 +1,13 @@
+{
+    "total_cost": 162.43292728119405,
+    "avg_latency_s": 60.0,
+    "max_latency_s": 60.0,
+    "avg_queue": 0.0,
+    "max_queue": 0.0,
+    "avg_throughput_rph": 3.526104494534767,
+    "max_throughput_rph": 9.234250878207435,
+    "sla_check": {
+        "sla_met": "True",
+        "pct_latency_met": 100.0
+    }
+}

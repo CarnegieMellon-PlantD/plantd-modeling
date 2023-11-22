@@ -1,15 +1,44 @@
-from plantd_modeling import build
+from plantd_modeling import build, trafficmodel, twin
 import sys
-from plantd_modeling import configuration
+from plantd_modeling import configuration, metrics
 import json
+import os
 
-
+if sys.argv[1] == "sim_all":
+    pmodel = build.build_twin(os.environ['MODEL_TYPE'])
+    tmodel = trafficmodel.forecast(2025)
+    twin.simulate(pmodel, tmodel)
+    
+if sys.argv[1] == "convert":
+    # list all files in directory fakeredis. For each of them, load the file, and save it to redis
+    for f in os.listdir("fakeredis"):
+        if f.startswith("trafficmodel_"):
+            print(f)
+            trafficmodel.deserialize_parameters(open(f"fakeredis/{f}").read())
+            metrics.redis.save_type("trafficmodel", f[13:-5],trafficmodel.serialize_parameters())
+        #elif f.startswith("experiment_"):
+        #    print(f)
+        #    configuration.Experiment.deserialize(open(f"fakeredis/{f}").read())
+        #    metrics.redis.save_type("experiment", f[11:-5],configuration.Experiment.serialize())
+        else:
+            print(f"Unknown file type {f}")
+    
 if sys.argv[1] == "build":
-    build.build_model()
-elif sys.argv[1] == "simulate":
-    print("Simulate (not implemented)")
+    build.build_twin(os.environ['MODEL_TYPE'])
 elif sys.argv[1] == "forecast":
-    print("Forecast (not implemented)")
+    # env will have forecast parameters, and a name for the forecast
+    # this will write the forecast to a file named <name>.json
+    trafficmodel.forecast(2025)
+elif sys.argv[1] == "simulate":
+    # env will have forecast *name* and a twin name
+    # Output will go into a file 
+    # output several traces called <twin name>-<forecast name>-<trace type>.json
+    #   - <trace type> is one of "load", "latency", "throughput", "cost", "queue_length"
+    # output statistics about the simulation
+    #   - total cost
+    #   - average throughput, latency, queue length
+    #   - worst case latency, queue length
+    twin.simulate()
 elif sys.argv[1] == "end_detect":
     print("End Detect (not implemented)")
 elif sys.argv[1] == "test_write":
