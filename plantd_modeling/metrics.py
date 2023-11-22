@@ -39,7 +39,7 @@ redis_host = os.environ.get("REDIS_HOST", None)
 redis = Redis(redis_host, redis_password)    
 
 class Metrics:
-    def __init__(self, prometheus_host) -> None:
+    def __init__(self, prometheus_host,) -> None:
         self.prometheus_host = prometheus_host
         
 
@@ -90,7 +90,10 @@ class Metrics:
 
 
 
-    def get_metrics(self, experiment: Experiment):
+    def get_metrics(self, experiment: Experiment, from_cached=False):
+        
+        if from_cached:
+            return pd.read_csv(io.StringIO(metrics.redis.load_str("metrics", experiment.experiment_name)), index_col=0, parse_dates=True)
         
         try:
             roughtime = self.get_rough_end_time(experiment)

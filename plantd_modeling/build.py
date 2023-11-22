@@ -8,7 +8,7 @@ from plantd_modeling import configuration, twin
 from plantd_modeling import metrics, cost
 
 
-def build_twin(model_type):
+def build_twin(model_type, from_cached=False):
     
     twin_name = os.environ['TWIN_NAME']
     prometheus_host = os.environ['PROMETHEUS_HOST']
@@ -42,7 +42,7 @@ def build_twin(model_type):
         print(experiment_name)
         try:
             config.experiments[experiment_name].add_metrics(
-                prom.get_metrics(config.experiments[experiment_name]))
+                prom.get_metrics(config.experiments[experiment_name], from_cached=from_cached))
         except requests.exceptions.HTTPError as e:
             print(f"Error getting metrics for {experiment_name}: {e.response.text}")
         mex = config.experiments[experiment_name].metrics

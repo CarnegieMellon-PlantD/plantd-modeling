@@ -45,6 +45,13 @@ Set up the following environment variables:
         - `plantd:metrics:$EXPERIMENT_NAME`  This will be a cache of data scraped from prometheus for each experiment (since prometheus data disappears after a few days)
         - `plantd:simulation_traffic:$SIM_NAME` contains a CSV string with a timeseries of all simulation results
         - `plantd:simulation_summary:$SIM_NAME` Contains summary of simulation data over the whole simluation year
+    - If the experiment data in prometheus has already aged out (e.g. more than 3 days old), but the experiment has previously been used in a
+        simulation, then the data can be used from the cache by calling `python make.py sim_all from_cached`.  (However, if you don't use from_cached, and it's
+        aged out, it'll write 0's to the cache, and the data will be lost.  So we really need a better technique here.)
+    - If the simulation succeeds, the script will print "SIMULATION_STATUS: Success"
+    - If the simulation fails, the script will print "SIMULATION_STATUS: Failure" and "ERROR_REASON: <explanation>" 
+
+
 
 3. *end_detector* To determine when a pipeline may have finished processing the data that was passed in in an experiment, call `python make.py end_detector`
     - not implemented yet
