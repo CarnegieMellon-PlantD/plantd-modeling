@@ -13,12 +13,14 @@ class PrometheusAgedOutException(Exception):
 
 REALTIME_CALLS_QUERY = 'calls_total{{job="{params.name}", namespace="{params.namespace}"}}'
 REALTIME_THROUGHPUT_QUERY = 'sum by(span_name)(irate(calls_total{{status_code="STATUS_CODE_UNSET", job="{params.name}", namespace="{params.namespace}"}}[{step}s]))'
-REALTIME_LATENCY_QUERY = 'irate(duration_milliseconds_sum{status_code="STATUS_CODE_UNSET", job="{params.name}", namespace="{params.namespace}"}[30s]) / irate(duration_milliseconds_count{status_code="STATUS_CODE_UNSET", job="{params.name}", namespace="{params.namespace}"}[30s])'
+REALTIME_LATENCY_QUERY = 'irate(duration_milliseconds_sum{{status_code="STATUS_CODE_UNSET", job="{params.name}", namespace="{params.namespace}"}}[30s]) / irate(duration_milliseconds_count{{status_code="STATUS_CODE_UNSET", job="{params.name}", namespace="{params.namespace}"}}[30s])'
 
 class Redis:
     def __init__(self, redis_host, redis_password) -> None:
         self.redis_host = redis_host
         self.redis_password = redis_password
+        if redis_host is None or redis_host == "":
+            raise Exception("REDIS_HOST environment variable not set")
         self.r = redis.Redis(host=redis_host, port=6379, db=0, decode_responses=True, password=redis_password)
 
     def save_dict(self, type, name, data):
@@ -39,7 +41,7 @@ redis_host = os.environ.get("REDIS_HOST", None)
 redis = Redis(redis_host, redis_password)    
 
 class Metrics:
-    def __init__(self, prometheus_host,) -> None:
+    def __init__(self, prometheus_host) -> None:
         self.prometheus_host = prometheus_host
         
 
@@ -59,11 +61,12 @@ class Metrics:
         print(query, datetime.utcfromtimestamp(start_ts), datetime.utcfromtimestamp(end_ts), step_interval)
         print(url)  
         print(query)
-    
         response = requests.get(url, params={'query': query, 'start': start_ts, 'end': end_ts, 'step': step_interval}, 
             #auth=('prometheus', prometheus_password), 
             verify=False, stream=False)
         response.raise_for_status()
+
+        
         #
         #import pdb; pdb.set_trace()
 
@@ -76,6 +79,7 @@ class Metrics:
             df = pd.DataFrame(result['values'], columns=['time', span])
             df['time'] = pd.to_datetime(df['time'], unit='s')
             df.set_index('time', inplace=True)
+            
             for column, dtype in df.dtypes.iteritems():
                 if dtype == 'object':
                     df[column] = pd.to_numeric(df[column], errors='coerce')
@@ -90,8 +94,8 @@ class Metrics:
 
 
 
-    def get_metrics(self, experiment: Experiment, from_cached=False):
-        
+    def get_metrics(self, experiment: Experiment, from_cached=False, also_latency=False):
+        #import pdb; pdb.set_trace()
         if from_cached:
             return pd.read_csv(io.StringIO(metrics.redis.load_str("metrics", experiment.experiment_name)), index_col=0, parse_dates=True)
         
@@ -110,13 +114,22 @@ class Metrics:
             print(query, datetime.utcfromtimestamp(start_ts), datetime.utcfromtimestamp(end_ts), step_interval)
             print(url)  
             print(query)
-        
        
             response = requests.get(url, params={'query': query, 'start': start_ts, 'end': end_ts, 'step': step_interval}, 
                 #auth=('prometheus', prometheus_password), 
                 verify=False, stream=False)
             response.raise_for_status()
             
+            latency = {}
+
+            if also_latency:
+                response_latency = requests.get(url, params={'query': REALTIME_LATENCY_QUERY.format(params=experiment.experiment_name, step=step_interval), 'start': start_ts, 'end': end_ts, 'step': step_interval}, 
+                    #auth=('prometheus', prometheus_password), 
+                    verify=False, stream=False)
+            
+                response_latency.raise_for_status()
+
+                latency = {r['metric']['span_name']: r for r in response_latency.json()['data']['result']}
 
             dfs = []
             for result in response.json()['data']['result']:
@@ -124,6 +137,11 @@ class Metrics:
                 df = pd.DataFrame(result['values'], columns=['time', span])
                 df['time'] = pd.to_datetime(df['time'], unit='s')
                 df.set_index('time', inplace=True)
+                if also_latency and span in latency:
+                    df_l = pd.DataFrame(latency[span]['values'], columns=['time', span])
+                    df_l['time'] = pd.to_datetime(df_l['time'], unit='s')
+                    df_l.set_index('time', inplace=True)
+                    df[span + '_latency'] = df_l[span]
                 dfs.append(df)
 
             if len(dfs) > 0:
@@ -131,27 +149,20 @@ class Metrics:
                 for column, dtype in df.dtypes.iteritems():
                     if dtype == 'object':
                         df[column] = pd.to_numeric(df[column], errors='coerce')
-                metrics.redis.save_str("metrics", experiment.experiment_name, df.to_csv(index=False))
-                df.to_csv(f"fakeredis/metrics_{experiment.experiment_name}.csv")
+                metrics.redis.save_str("metrics", experiment.experiment_name, df.to_csv(index=True))
+                #df.to_csv(f"fakeredis/metrics_{experiment.experiment_name}.csv")
             else:
                 df = pd.DataFrame()
         except requests.exceptions.HTTPError as e:
-            try:
-                print(f"Error getting metrics for {experiment.experiment_name}: {e.response.text}")
-                df = pd.read_csv(f"fakeredis/metrics_{experiment.experiment_name}.csv", index_col=0, parse_dates=True)
-            except:
-                print(f"Error getting metrics from file cache for {experiment.experiment_name}: {e}")
-                print(f"Trying redis")
-                # read from redis
-                df = pd.read_csv(io.StringIO(metrics.redis.load_str("metrics", experiment.experiment_name)), index_col=0, parse_dates=True)
+            print(f"Error getting metrics for {experiment.experiment_name}: {e.response.text}")
+            
+            print(f"Trying redis")
+            # read from redis
+            df = pd.read_csv(io.StringIO(metrics.redis.load_str("metrics", experiment.experiment_name)), index_col=0, parse_dates=True)
         except Exception as e:
-            try:
-                print(f"Error getting metrics for {experiment.experiment_name}: {type(e)} {e}")
-                df = pd.read_csv(f"fakeredis/metrics_{experiment.experiment_name}.csv", index_col=0, parse_dates=True)
-            except:
-                print(f"Error getting metrics from file cache for {experiment.experiment_name}: {e}")
-                print(f"Trying redis")
-                # read from redis
-                df = pd.read_csv(io.StringIO(metrics.redis.load_str("metrics", experiment.experiment_name)), index_col=0, parse_dates=True)
+            print(f"Error getting metrics for {experiment.experiment_name}: {type(e)} {e}")
+            print(f"Trying redis")
+            # read from redis
+            df = pd.read_csv(io.StringIO(metrics.redis.load_str("metrics", experiment.experiment_name)), index_col=0, parse_dates=True)
 
         return df

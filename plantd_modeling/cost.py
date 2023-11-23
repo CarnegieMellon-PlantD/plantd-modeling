@@ -13,9 +13,14 @@ import requests
 from dotenv import load_dotenv
 from plantd_modeling import metrics
 
-def get_cost(source, experiment_name, pipeline_namespace, start_time, end_time):
+def get_cost(source, experiment_name, pipeline_namespace, start_time, end_time, from_cached=False):
     if source != "opencost":
         return None
+    
+    if from_cached:
+        experiment_cost = metrics.redis.load_dict("experiment_cost", experiment_name)
+        return experiment_cost
+    
     # Get endpoints from environment variables
     # load_dotenv(".env")   # read from .env file for local testing only
     prometheus_endpoint = os.environ.get("PROMETHEUS_ENDPOINT", "http://localhost:9990/api/v1/query")
@@ -105,7 +110,7 @@ def get_cost_data(opencost_endpoint, pipeline_label_key, pipeline_label_value,
         print("Response key: ", response_key)        
 
         pod_records = response.json()['data'][0]
-        print(pod_records)
+        #print(pod_records)
         # iterate through pod_records, find all that have key starting with 
         # response_key, and store selected records in opencost_records
 
@@ -119,9 +124,9 @@ def get_cost_data(opencost_endpoint, pipeline_label_key, pipeline_label_value,
                 pod_dict["ramByteUsageAverage"] = float(pod_records[key]["ramByteUsageAverage"])
                 pod_dict["loadBalancerCost"] = float(pod_records[key]["loadBalancerCost"])
                 pod_dict["pvCost"] = float(pod_records[key]["pvCost"])
-                print(key)
-                print(pod_dict)
-                print("------")
+                #print(key)
+                #print(pod_dict)
+                #print("------")
                 # add pod_dict to opencost_records
                 opencost_records[key] = pod_dict
     except:

@@ -5,11 +5,22 @@ import json
 import os
 
 if sys.argv[1] == "sim_all":
-    pmodel = build.build_twin(os.environ['MODEL_TYPE'])
-    tmodel = trafficmodel.forecast(2025)
-    twin.simulate(pmodel, tmodel)
-    
-if sys.argv[1] == "convert":
+    try:
+        from_cached = False
+        if len(sys.argv) >= 3 and sys.argv[2] == "from_cached":
+            from_cached = True
+        else:
+            print("USE CACHE")
+            #quit()
+        pmodel = build.build_twin(os.environ['MODEL_TYPE'], from_cached=from_cached)
+        tmodel = trafficmodel.forecast(2025)
+        twin.simulate(pmodel, tmodel)
+    except Exception as e:
+        print("SIMULATION_STATUS: Failure")
+        print(f"ERROR_REASON: {type(e)}: {e}")
+        raise e
+    print("SIMULATION_STATUS: Success")
+elif sys.argv[1] == "convert":
     # list all files in directory fakeredis. For each of them, load the file, and save it to redis
     for f in os.listdir("fakeredis"):
         if f.startswith("trafficmodel_"):
@@ -23,7 +34,7 @@ if sys.argv[1] == "convert":
         else:
             print(f"Unknown file type {f}")
     
-if sys.argv[1] == "build":
+elif sys.argv[1] == "build":
     build.build_twin(os.environ['MODEL_TYPE'])
 elif sys.argv[1] == "forecast":
     # env will have forecast parameters, and a name for the forecast
