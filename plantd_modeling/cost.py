@@ -10,7 +10,6 @@ import datetime as dt
 import json
 import time
 import requests
-from dotenv import load_dotenv
 from plantd_modeling import metrics
 
 def get_cost(source, experiment_name, pipeline_namespace, start_time, end_time, from_cached=False):
@@ -22,7 +21,6 @@ def get_cost(source, experiment_name, pipeline_namespace, start_time, end_time, 
         return experiment_cost
     
     # Get endpoints from environment variables
-    # load_dotenv(".env")   # read from .env file for local testing only
     prometheus_endpoint = os.environ.get("PROMETHEUS_ENDPOINT", "http://localhost:9990/api/v1/query")
     opencost_endpoint = os.environ.get("OPENCOST_ENDPOINT", "http://localhost:9003/allocation")
     
