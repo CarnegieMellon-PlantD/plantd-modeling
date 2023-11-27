@@ -10,8 +10,7 @@ if sys.argv[1] == "sim_all":
         if len(sys.argv) >= 3 and sys.argv[2] == "from_cached":
             from_cached = True
         else:
-            print("USE CACHE")
-            quit()
+            print("add 'from_cached' to use cached metrics")
 
         import pdb; pdb.set_trace()
         pmodel = build.build_twin(os.environ['MODEL_TYPE'], from_cached=from_cached)
