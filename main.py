@@ -11,7 +11,9 @@ if sys.argv[1] == "sim_all":
             from_cached = True
         else:
             print("USE CACHE")
-            #quit()
+            quit()
+
+        import pdb; pdb.set_trace()
         pmodel = build.build_twin(os.environ['MODEL_TYPE'], from_cached=from_cached)
         tmodel = trafficmodel.forecast(2025)
         twin.simulate(pmodel, tmodel)

@@ -9,7 +9,6 @@ from typing import Any, List, Dict
 from pandas import DataFrame
 import pandas as pd
 import io
-import shlex
 
 
 def parse_duration(s : str) -> timedelta:
@@ -202,7 +201,7 @@ class ConfigurationConnectionKubernetes:
         self.raw_experiments = {}
         self.raw_load_patterns = []
 
-    def get_experiment_metadata(self, experiment_names: List[KubernetesName] = []):
+    def get_experiment_metadata(self, experiment_names: List[KubernetesName] = [], from_cached=False):
         # Get start and end times of experiments
         experiment_metadata  = {}
         query_url = f"{self.kubernetes_service_address}/apis/{self.group}/{self.controller_version}/experiments"

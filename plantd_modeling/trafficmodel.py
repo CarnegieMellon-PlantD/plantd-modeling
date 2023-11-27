@@ -13,7 +13,6 @@ def forecast(year):
     prometheus_host = os.environ['PROMETHEUS_HOST']
     prometheus_password = os.environ['PROMETHEUS_PASSWORD']
     
-    
     config = configuration.ConfigurationConnectionEnvVars()
     #model = TrafficModel.deserialize_parameters_from_file(open(f"fakeredis/trafficmodel_{traffic_model_name}.json").read())
     model = TrafficModel.deserialize_parameters(metrics.redis.load_str("trafficmodel_params", traffic_model_name))
@@ -122,8 +121,10 @@ class TrafficModel(dict):
         self.traffic = make_blank_frame(fromdate, todate)
         self.traffic["base_recs"] = self["start_row_cnt"]
         month_growth = self["yearly_growth_rate"] ** (1.0/12)
+        compounded_growth_rates = pd.Series([month_growth ** i for i in range(1, 13)], index=pd.Index(range(1, 13), name="Month"))
+
         self.traffic["monthly"] = adjust_by_matching_index(self.traffic.base_recs,  \
-                    month_growth * self["corrections_monthly"])
+                    compounded_growth_rates * self["corrections_monthly"])
         self.traffic["hourly"] = adjust_by_matching_index(self.traffic["monthly"], self["corrections_hourly"])
         return self.traffic
     
