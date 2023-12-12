@@ -58,3 +58,50 @@ Set up the following environment variables:
     - EXPERIMENTS should contain just one experiment 
     - This writes the end time to redis, with key `plantd:experiment:namespace.name:detected_end`
 
+
+
+Sample files provided in this project, representing 3 traffic models, 3 experiments, and 9 (=3*3) simulations:
+    - plantd:trafficmodel_params:traffic-model-low
+    - plantd:trafficmodel_params:traffic-model-lowplus
+    - plantd:trafficmodel_params:traffic-model-nominal
+    - plantd:trafficmodel_predictions:traffic-model-low
+    - plantd:trafficmodel_predictions:traffic-model-lowplus
+    - plantd:trafficmodel_predictions:traffic-model-nominal
+    - plantd:twinmodel:ubi-chris-test.chris-model-good-tri
+    - plantd:twinmodel:ubi-chris-test.chris-model-bad-tri
+    - plantd:twinmodel:ubi-chris-test.chris-model-fixed-tri
+    - plantd:experiment_cost:ubi-chris-test.ubi-chris-test-good-triangle-3
+    - plantd:experiment_cost:ubi-chris-test.ubi-chris-test-bad-triangle-3
+    - plantd:experiment_cost:ubi-chris-test.ubi-chris-test-fixed-triangle-3
+    - plantd:metrics:ubi-chris-test.ubi-chris-test-fixed-triangle-3
+    - plantd:metrics:ubi-chris-test.ubi-chris-test-bad-triangle-3
+    - plantd:metrics:ubi-chris-test.ubi-chris-test-good-triangle-3
+    - plantd:simulation_traffic:test-lowplus-fixed-tri
+    - plantd:simulation_traffic:test-low-fixed-tri
+    - plantd:simulation_traffic:test-low-good-tri
+    - plantd:simulation_traffic:test-lowplus-bad-tri
+    - plantd:simulation_traffic:test-lowplus-good-tri
+    - plantd:simulation_traffic:test-nom-fixed-tri
+    - plantd:simulation_traffic:test-low-bad-tri
+    - plantd:simulation_traffic:test-nom-good-tri
+    - plantd:simulation_traffic:test-nom-bad-tri
+    - plantd:simulation_summary:test-nom-bad-tri
+    - plantd:simulation_summary:test-nom-good-tri
+    - plantd:simulation_summary:test-low-bad-tri
+    - plantd:simulation_summary:test-low-fixed-tri
+    - plantd:simulation_summary:test-low-good-tri
+    - plantd:simulation_summary:test-nom-fixed-tri
+    - plantd:simulation_summary:test-lowplus-fixed-tri
+    - plantd:simulation_summary:test-lowplus-good-tri
+    - plantd:simulation_summary:test-lowplus-bad-tri
+
+Plus these environment files that can be exported, then used to trigger simulations:
+    - dev-env-build-test-low-bad-tri.env
+    - dev-env-build-test-low-fixed-tri.env
+    - dev-env-build-test-low-good-tri.env
+    - dev-env-build-test-lowplus-bad-tri.env
+    - dev-env-build-test-lowplus-fixed-tri.env
+    - dev-env-build-test-lowplus-good-tri.env
+    - dev-env-build-test-nom-bad-tri.env
+    - dev-env-build-test-nom-fixed-tri.env
+    - dev-env-build-test-nom-good-tri.env
