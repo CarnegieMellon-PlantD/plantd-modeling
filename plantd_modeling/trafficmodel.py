@@ -129,19 +129,19 @@ class TrafficModel(dict):
         return self.traffic
     
     def serialize_forecast_to_file(self, filename):
-        self.traffic.reset_index().to_csv(filename)
+        self.traffic.reset_index().to_json(filename, orient="split", date_format="iso")
 
     def serialize_forecast(self):
-        return self.traffic.reset_index().to_csv()
+        return self.traffic.reset_index().to_json(orient="split", date_format="iso")
 
     def deserialize_forecast_from_file(self, filename):
         if os.path.exists(filename):
-            self.traffic = pd.read_csv(filename).set_index(["Year","Month","Day","DOW","Hour"], inplace=False)
+            self.traffic = pd.read_json(filename, orient="split", date_format="iso").set_index(["Year","Month","Day","DOW","Hour"], inplace=False)
         else:
             raise Exception(f"File {filename} does not exist")
         
     def deserialize_forecast(self, serialized):
-        self.traffic = pd.read_csv(io.StringIO(serialized)).set_index(["Year","Month","Day","DOW","Hour"], inplace=False)
+        self.traffic = pd.read_json(io.StringIO(serialized), orient="split", date_format="iso").set_index(["Year","Month","Day","DOW","Hour"], inplace=False)
         
     def serialize_parameters(self):
         serialized = {

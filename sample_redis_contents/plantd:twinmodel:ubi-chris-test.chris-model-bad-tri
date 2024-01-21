@@ -1,1 +1,1 @@
-{"model_type": "simple", "maxrate_rps": 1.951219512195122, "per_vm_hourcost": 0.008224383617442028, "avg_latency_s": 0.15175674009705795, "policy": "fifo"}
+{"model_type": "simple", "maxrate_rph": 1.951219512195122, "per_vm_hourcost": 0.008224383617442028, "avg_latency_s": 0.15175674009705795, "policy": "fifo"}
