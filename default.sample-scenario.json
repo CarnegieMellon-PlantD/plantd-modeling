@@ -1,0 +1,117 @@
+{
+    "apiVersion": "windtunnel.plantd.org/v1alpha1",
+    "kind": "Scenario",
+    "metadata": {
+        "creationTimestamp": "2024-03-14T18:21:56Z",
+        "generation": 1,
+        "name": "sample-scenario",
+        "namespace": "default",
+        "resourceVersion": "37607172",
+        "uid": "133e0a65-7292-4f3e-a0de-3f6722b573ce"
+    },
+    "spec": {
+        "dataSetConfig": {
+            "compressPerSchema": false,
+            "compressedFileFormat": "zip",
+            "fileFormat": "csv"
+        },
+        "pipelineRef": {
+            "name": "pipeline-test-pipeline",
+            "namespace": "test-pipeline"
+        },
+        "tasks": [
+            {
+                "monthsRelevant": [
+                    1,
+                    2,
+                    3,
+                    11,
+                    12
+                ],
+                "name": "evtwarn",
+                "pushFrequencyPerMonth": {
+                    "max": 75,
+                    "min": 30
+                },
+                "sendingDevices": {
+                    "max": 32000,
+                    "min": 20000
+                },
+                "size": "3Ki"
+            },
+            {
+                "monthsRelevant": [
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10
+                ],
+                "name": "evtwarn",
+                "pushFrequencyPerMonth": {
+                    "max": 75,
+                    "min": 30
+                },
+                "sendingDevices": {
+                    "max": 32000,
+                    "min": 20000
+                },
+                "size": "3Ki"
+            },
+            {
+                "monthsRelevant": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12
+                ],
+                "name": "host",
+                "pushFrequencyPerMonth": {
+                    "max": 1800,
+                    "min": 1800
+                },
+                "sendingDevices": {
+                    "max": 70000,
+                    "min": 70000
+                },
+                "size": "1.2Ki"
+            },
+            {
+                "monthsRelevant": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12
+                ],
+                "name": "summary",
+                "pushFrequencyPerMonth": {
+                    "max": 2,
+                    "min": 2
+                },
+                "sendingDevices": {
+                    "max": 3,
+                    "min": 1
+                },
+                "size": "1Ki"
+            }
+        ]
+    }
+}

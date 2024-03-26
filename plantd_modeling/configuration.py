@@ -9,7 +9,7 @@ from typing import Any, List, Dict
 from pandas import DataFrame
 import pandas as pd
 import io
-
+import humanfriendly
 
 def parse_duration(s : str) -> timedelta:
     # Extract hours, minutes, and seconds
@@ -42,7 +42,111 @@ class KubernetesName:
     def __str__(self) -> str:
         return self.dotted_name
 
-#
+
+class NetCost:
+    def __init__(self, nc):
+        self.raw_k8s_defn = nc
+        self.net_cost_per_mb = float(nc["spec"]["netCostPerMB"])
+        self.processed_data_retention_policy_months = nc["spec"]["processedDataRetentionPolicyMonths"]
+        self.processed_data_store_cost_per_mb_month = float(nc["spec"]["processedDataStoreCostPerMBMonth"])
+        self.raw_data_retention_policy_months = nc["spec"]["rawDataRetentionPolicyMonths"]
+        self.raw_data_store_cost_per_mb_month = float(nc["spec"]["rawDataStoreCostPerMBMonth"])
+    
+    def serialize(self):
+        return {
+            "net_cost_per_mb": self.net_cost_per_mb,
+            "processed_data_retention_policy_months": self.processed_data_retention_policy_months,
+            "processed_data_store_cost_per_mb_month": self.processed_data_store_cost_per_mb_month,
+            "raw_data_retention_policy_months": self.raw_data_retention_policy_months,
+            "raw_data_store_cost_per_mb_month": self.raw_data_store_cost_per_mb_month
+        }
+    
+    @classmethod
+    def deserialize(cls, json_rec):
+        nc = cls({})
+        nc.net_cost_per_mb = json_rec["net_cost_per_mb"]
+        nc.processed_data_retention_policy_months = json_rec["processed_data_retention_policy_months"]
+        nc.processed_data_store_cost_per_mb_month = json_rec["processed_data_store_cost_per_mb_month"]
+        nc.raw_data_retention_policy_months = json_rec["raw_data_retention_policy_months"]
+        nc.raw_data_store_cost_per_mb_month = json_rec["raw_data_store_cost_per_mb_month"]
+        return nc
+    
+    def apply(self, traffic_model):
+        self.monthly_totals = traffic_model.traffic.groupby(["Year","Month"])[["bandwidth_min","bandwidth_max"]].sum()
+        self.monthly_totals["net_cost_per_month_min"] = self.monthly_totals["bandwidth_min"] / 1024000.0 * self.net_cost_per_mb
+        self.monthly_totals["net_cost_per_month_max"] = self.monthly_totals["bandwidth_max"] / 1024000.0 * self.net_cost_per_mb
+        self.monthly_totals["raw_data_store_cost_per_month_min"] = self.monthly_totals["bandwidth_min"] / 1024000.0 \
+            * self.processed_data_store_cost_per_mb_month * self.processed_data_retention_policy_months
+        self.monthly_totals["raw_data_store_cost_per_month_max"] = self.monthly_totals["bandwidth_max"] / 1024000.0 \
+            * self.processed_data_store_cost_per_mb_month * self.processed_data_retention_policy_months
+        self.monthly_totals["cloud_processing_cost"] = 0
+
+@dataclass
+class ScenarioTask():
+    months_relevant: list[int]
+    name: str
+    push_frequency_per_month_min: float
+    push_frequency_per_month_max: float
+    sending_devices_min: int
+    sending_devices_max: int
+    size: int
+
+
+@dataclass
+class Scenario():
+    dataset_config_compress_per_schema: bool
+    dataset_config_compressed_file_format: str
+    dataset_config_file_format: str
+    pipeline_ref: KubernetesName
+    tasks: list[ScenarioTask]
+        
+    # Serialize and deserialize as json
+    def serialize(self):
+        return json.dumps({
+            "spec": {
+                "dataSetConfig": {
+                    "compressPerSchema": self.dataset_config_compress_per_schema,
+                    "compressedFileFormat": self.dataset_config_compressed_file_format,
+                    "fileFormat": self.dataset_config_file_format
+                },
+                "pipelineRef": self.pipeline_ref.serialize(),
+                "tasks": [{
+                    "monthsRelevant": task.months_relevant,
+                    "name": task.name,
+                    "pushFrequencyPerMonth": {
+                        "min": task.push_frequency_per_month_min,
+                        "max": task.push_frequency_per_month_max
+                    },
+                    "sendingDevices": {
+                        "min": task.sending_devices_min,
+                        "max": task.sending_devices_max
+                    },
+                    "size": humanfriendly.format_size(task.size)
+                } for task in self.tasks]
+            }
+        })
+    
+    @classmethod
+    def deserialize(cls, jsonstr):
+        params = json.loads(jsonstr)["spec"]
+        
+        scen = cls({})
+        scen.dataset_config_compress_per_schema = params["dataSetConfig"]["compressPerSchema"],
+        scen.dataset_config_compressed_file_format = params["dataSetConfig"]["compressedFileFormat"],
+        scen.dataset_config_file_format = params["dataSetConfig"]["fileFormat"],
+        scen.pipeline_ref = KubernetesName.deserialize(params["pipelineRef"]),
+        scen.tasks = [ScenarioTask(
+                months_relevant = task["monthsRelevant"],
+                name = task["name"],
+                push_frequency_per_month_min = task["pushFrequencyPerMonth"]["min"],
+                push_frequency_per_month_max = task["pushFrequencyPerMonth"]["max"],
+                sending_devices_min = task["sendingDevices"]["min"],
+                sending_devices_max = task["sendingDevices"]["max"],
+                size = humanfriendly.parse_size(task["size"])
+            ) for task in params["tasks"]]
+        return scen
+    
+
 
 class LoadPattern:
     def __init__(self, lp):
@@ -175,6 +279,12 @@ class ConfigurationConnectionEnvVars:
         for exp in self.experiments.values():
             exp.load_patterns = {k:self.load_patterns[v] for k,v in exp.load_pattern_names.items()}
             #exp.pipeline = self.get_pipeline_metadata(exp.pipeline_name)
+        self.scenario = None
+        self.netcosts = None
+        if "SCENARIO" in os.environ:
+            self.scenario = Scenario.deserialize(os.environ["SCENARIO"])
+        if "NETCOSTS" in os.environ:
+            self.netcosts = NetCost.deserialize(json.loads(os.environ["NETCOSTS"]))
         
     def get_experiment_metadata(self):
         return self.experiments

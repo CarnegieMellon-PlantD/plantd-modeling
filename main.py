@@ -1,4 +1,4 @@
-from plantd_modeling import build, trafficmodel, twin
+from plantd_modeling import build, trafficmodel, twin, advanced_trafficmodel, netcost
 import sys
 from plantd_modeling import configuration, metrics
 import json
@@ -15,13 +15,31 @@ if sys.argv[1] == "sim_all":
 
         #import pdb; pdb.set_trace()
         pmodel = build.build_twin(os.environ['MODEL_TYPE'], from_cached=from_cached)
-        tmodel = trafficmodel.forecast(2025)
+        tmodel = trafficmodel.forecast(3000)
         twin.simulate(pmodel, tmodel)
     except Exception as e:
         print("SIMULATION_STATUS: Failure")
         print(f"ERROR_REASON: {type(e)}: {e}")
         raise e
     print("SIMULATION_STATUS: Success")
+elif sys.argv[1] == "advanced_net_cost_only":
+    try:
+        from_cached = False
+        if len(sys.argv) >= 3 and sys.argv[2] == "from_cached":
+            from_cached = True
+        else:
+            print("add 'from_cached' to use cached metrics")
+            #quit()
+
+        tmodel = trafficmodel.advanced_forecast(3000, configuration.scenario)
+        netcost_results = configuration.netcosts.apply(tmodel)
+    except Exception as e:
+        print("SIMULATION_STATUS: Failure")
+        print(f"ERROR_REASON: {type(e)}: {e}")
+        raise e
+    print("SIMULATION_STATUS: Success")
+elif sys.argv[1] == "advanced_sim_all":
+    pass
 elif sys.argv[1] == "convert":
     # list all files in directory fakeredis. For each of them, load the file, and save it to redis
     for f in os.listdir("fakeredis"):
@@ -36,12 +54,31 @@ elif sys.argv[1] == "convert":
         else:
             print(f"Unknown file type {f}")
     
+elif sys.argv[1] == "scenario_sim_all":
+    try:
+        from_cached = True
+        if len(sys.argv) >= 3 and sys.argv[2] == "from_cached":
+            from_cached = True
+        else:
+            print("add 'from_cached' to use cached metrics")
+            #quit()
+
+        pmodel = build.build_twin(os.environ['MODEL_TYPE'], from_cached=from_cached)
+        tmodel = 
+        tmodel = trafficmodel.forecast(3000)
+        twin.simulate(pmodel, tmodel)
+    except Exception as e:
+        print("SIMULATION_STATUS: Failure")
+        print(f"ERROR_REASON: {type(e)}: {e}")
+        raise e
+    print("SIMULATION_STATUS: Success")
+    
 elif sys.argv[1] == "build":
     build.build_twin(os.environ['MODEL_TYPE'])
 elif sys.argv[1] == "forecast":
     # env will have forecast parameters, and a name for the forecast
     # this will write the forecast to a file named <name>.json
-    trafficmodel.forecast(2025)
+    trafficmodel.forecast(3000)
 elif sys.argv[1] == "simulate":
     # env will have forecast *name* and a twin name
     # Output will go into a file 
