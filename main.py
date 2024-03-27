@@ -16,8 +16,10 @@ if sys.argv[1] == "sim_all":
             #quit()
 
         #import pdb; pdb.set_trace()
+        config = configuration.ConfigurationConnectionEnvVars()
         pmodel = build.build_twin(os.environ['MODEL_TYPE'], from_cached=from_cached)
         tmodel = trafficmodel.forecast(ARBITRARY_FUTURE_YEAR)
+        netcost_results = config.netcosts.apply(tmodel)
         twin.simulate(pmodel, tmodel)
     except Exception as e:
         print("SIMULATION_STATUS: Failure")
@@ -37,14 +39,32 @@ elif sys.argv[1] == "advanced_net_cost_only":
         tmodel = advanced_trafficmodel.forecast(ARBITRARY_FUTURE_YEAR, config.scenario)
         netcost_results = config.netcosts.apply(tmodel)
         metrics.redis.save_str("netcost_predictions", os.environ["SCENARIO_NAME"], config.netcosts.serialize_monthly_totals())
-
     except Exception as e:
         print("SIMULATION_STATUS: Failure")
         print(f"ERROR_REASON: {type(e)}: {e}")
         raise e
     print("SIMULATION_STATUS: Success")
 elif sys.argv[1] == "advanced_sim_all":
-    pass
+    try:
+        from_cached = False
+        if len(sys.argv) >= 3 and sys.argv[2] == "from_cached":
+            from_cached = True
+        else:
+            print("add 'from_cached' to use cached metrics")
+            #quit()
+
+        config = configuration.ConfigurationConnectionEnvVars()
+        tmodel = advanced_trafficmodel.forecast(ARBITRARY_FUTURE_YEAR, config.scenario)
+        netcost_results = config.netcosts.apply(tmodel)
+        metrics.redis.save_str("netcost_predictions", os.environ["SCENARIO_NAME"], config.netcosts.serialize_monthly_totals())
+        #twin = build_advanced.build_advanced_twin(os.environ['MODEL_TYPE'], from_cached=from_cached)
+        #twin.simulate(tmodel, netcost_results)
+        #metrics.redis.save_str("simulation_results", os.environ["SCENARIO_NAME"], twin.serialize_simulation_results()
+    except Exception as e:
+        print("SIMULATION_STATUS: Failure")
+        print(f"ERROR_REASON: {type(e)}: {e}")
+        raise e
+    print("SIMULATION_STATUS: Success")
 elif sys.argv[1] == "convert":
     # list all files in directory fakeredis. For each of them, load the file, and save it to redis
     for f in os.listdir("fakeredis"):

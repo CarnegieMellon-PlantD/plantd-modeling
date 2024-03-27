@@ -73,7 +73,13 @@ class NetCost:
         return nc
     
     def apply(self, traffic_model):
-        self.monthly_totals = traffic_model.traffic.groupby(["Year","Month"])[["bandwidth_min","bandwidth_max"]].sum()
+        if "bandwidth_min" in traffic_model.traffic.columns:
+            self.monthly_totals = traffic_model.traffic.groupby(["Year","Month"])[["bandwidth_min","bandwidth_max"]].sum()
+        else:
+            self.monthly_totals = traffic_model.traffic.groupby(["Year","Month"])[["hourly"]].sum()
+            self.monthly_totals.columns = ["bandwidth_min"]
+            self.monthly_totals["bandwidth_max"] = self.monthly_totals["bandwidth_min"]
+            
         self.monthly_totals["net_cost_per_month_min"] = self.monthly_totals["bandwidth_min"] / 1024000.0 * self.net_cost_per_mb
         self.monthly_totals["net_cost_per_month_max"] = self.monthly_totals["bandwidth_max"] / 1024000.0 * self.net_cost_per_mb
         self.monthly_totals["raw_data_store_cost_per_month_min"] = self.monthly_totals["bandwidth_min"] / 1024000.0 \
