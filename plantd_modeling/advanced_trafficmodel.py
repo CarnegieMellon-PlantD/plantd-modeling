@@ -9,23 +9,7 @@ import io
 from calendar import monthrange
 import numpy as np
 
-def forecast(year, scenario):
-    
-    traffic_model_name = os.environ['TRAFFIC_MODEL_NAME']
-    
-    config = configuration.ConfigurationConnectionEnvVars()
-    #model = TrafficModel.deserialize_parameters_from_file(open(f"fakeredis/trafficmodel_{traffic_model_name}.json").read())
-    model = configuration.TrafficModel.deserialize_parameters(metrics.redis.load_str("trafficmodel_params", traffic_model_name))
 
-
-
-    model.generate_traffic(datetime(year,1,1), datetime(year,12,31), scenario)
-
-    #model.serialize_forecast(f"fakeredis/trafficmodel_{traffic_model_name}.csv")
-    #print(f"Traffic model {traffic_model_name} saved to fakeredis/trafficmodel_{traffic_model_name}.csv")
-    metrics.redis.save_str("advanced_trafficmodel_predictions", traffic_model_name, model.serialize_forecast())
-    
-    return model
 
 def normalize(col): return len(col) * col / col.sum()
 
@@ -122,30 +106,35 @@ class AdvancedTrafficModel(dict):
         for (k,v) in model.items(): super().__setitem__(k,v)
 
     def min_task_item_recs_per_hour_multiplier(self, task_item, year, month):
+        days_in_month = pd.Series(zip(year, month)).apply(lambda r: monthrange(*r)[1])
+        #import pdb; pdb.set_trace()
         return task_item.push_frequency_per_month_min * \
-            task_item.sending_devices_min * (month in task_item.months_relevant) \
-            / (24 * monthrange(year, month))   
+            task_item.sending_devices_min * (month.isin(task_item.months_relevant)) \
+            / (24 * days_in_month) 
     
     def max_task_item_recs_per_hour_multiplier(self, task_item, year, month):
+        days_in_month = pd.Series(zip(year, month)).apply(lambda r: monthrange(*r)[1])
         return task_item.push_frequency_per_month_max * \
-            task_item.sending_devices_max * (month in task_item.months_relevant) \
-            / (24 * monthrange(year, month))
+            task_item.sending_devices_max * (month.isin(task_item.months_relevant)) \
+            / (24 * days_in_month)
     
     def generate_traffic(self, fromdate, todate, scenario):
         self.traffic = make_blank_frame(fromdate, todate)
         
         self.traffic["base_recs"] = self["start_row_cnt"]
 
-        self.traffic["monthly"] = adjust_by_matching_index(self.traffic.base_recs,  \
-                     * self["corrections_monthly"])
+        # Note: ignores the base rate and growth rate; these are inferred from the scenario now
+        self.traffic["monthly"] = adjust_by_matching_index(self.traffic["base_recs"]/self.traffic["base_recs"],  self["corrections_monthly"])
         self.traffic["hourly"] = adjust_by_matching_index(self.traffic["monthly"], self["corrections_hourly"])
         self.traffic["bandwidth_min"] = 0
         self.traffic["bandwidth_max"] = 0
         for task in scenario.tasks:
             self.traffic["task_" + task.name + "_min_lambda"] = self.traffic["hourly"] * \
-                self.min_task_item_recs_per_hour_multiplier(task, self.traffic.index.get_level_values("Year"), self.traffic.index.get_level_values("Month"))
+                self.min_task_item_recs_per_hour_multiplier(task, self.traffic.index.get_level_values("Year"), self.traffic.index.get_level_values("Month")).values
+
+
             self.traffic["task_" + task.name + "_max_lambda"] = self.traffic["hourly"] * \
-                self.max_task_item_recs_per_hour_multiplier(task, self.traffic.index.get_level_values("Year"), self.traffic.index.get_level_values("Month"))
+                self.max_task_item_recs_per_hour_multiplier(task, self.traffic.index.get_level_values("Year"), self.traffic.index.get_level_values("Month")).values
             # for each row, choose from poisson distribution given lambda value
             self.traffic["task_" + task.name + "_min_rph"] = np.random.poisson(self.traffic["task_" + task.name + "_min_lambda"])
             self.traffic["task_" + task.name + "_max_rph"] = np.random.poisson(self.traffic["task_" + task.name + "_max_lambda"])
@@ -184,7 +173,7 @@ class AdvancedTrafficModel(dict):
     @classmethod
     def deserialize_parameters(cls, jsonstr):
         params = json.loads(jsonstr)
-        t = configuration.TrafficModel({})
+        t = AdvancedTrafficModel({})
         t["start_row_cnt"] = params["start_row_cnt"]
         t["corrections_monthly"] = deserialize_series(params["corrections_monthly"])
         t["corrections_hourly"] = deserialize_mi_series(params["corrections_hourly"])
@@ -252,3 +241,19 @@ class AdvancedTrafficModel(dict):
         self.calculate()
         return self.traffic.queue_len
         
+def forecast(year, scenario):
+    
+    traffic_model_name = os.environ['TRAFFIC_MODEL_NAME']
+    
+    config = configuration.ConfigurationConnectionEnvVars()
+    #model = TrafficModel.deserialize_parameters_from_file(open(f"fakeredis/trafficmodel_{traffic_model_name}.json").read())
+    model = AdvancedTrafficModel.deserialize_parameters(metrics.redis.load_str("trafficmodel_params", traffic_model_name))
+
+
+    model.generate_traffic(datetime(year,1,1), datetime(year,12,31), scenario)
+
+    #model.serialize_forecast(f"fakeredis/trafficmodel_{traffic_model_name}.csv")
+    #print(f"Traffic model {traffic_model_name} saved to fakeredis/trafficmodel_{traffic_model_name}.csv")
+    metrics.redis.save_str("advanced_trafficmodel_predictions", traffic_model_name, model.serialize_forecast())
+    
+    return model

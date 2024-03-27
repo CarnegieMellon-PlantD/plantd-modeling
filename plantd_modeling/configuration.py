@@ -51,6 +51,7 @@ class NetCost:
         self.processed_data_store_cost_per_mb_month = float(nc["spec"]["processedDataStoreCostPerMBMonth"])
         self.raw_data_retention_policy_months = nc["spec"]["rawDataRetentionPolicyMonths"]
         self.raw_data_store_cost_per_mb_month = float(nc["spec"]["rawDataStoreCostPerMBMonth"])
+        
     
     def serialize(self):
         return {
@@ -62,13 +63,13 @@ class NetCost:
         }
     
     @classmethod
-    def deserialize(cls, json_rec):
+    def xdeserialize(cls, json_rec):
         nc = cls({})
-        nc.net_cost_per_mb = json_rec["net_cost_per_mb"]
-        nc.processed_data_retention_policy_months = json_rec["processed_data_retention_policy_months"]
-        nc.processed_data_store_cost_per_mb_month = json_rec["processed_data_store_cost_per_mb_month"]
-        nc.raw_data_retention_policy_months = json_rec["raw_data_retention_policy_months"]
-        nc.raw_data_store_cost_per_mb_month = json_rec["raw_data_store_cost_per_mb_month"]
+        nc.net_cost_per_mb = json_rec["spec"]["net_cost_per_mb"]
+        nc.processed_data_retention_policy_months = json_rec["spec"]["processed_data_retention_policy_months"]
+        nc.processed_data_store_cost_per_mb_month = json_rec["spec"]["processed_data_store_cost_per_mb_month"]
+        nc.raw_data_retention_policy_months = json_rec["spec"]["raw_data_retention_policy_months"]
+        nc.raw_data_store_cost_per_mb_month = json_rec["spec"]["raw_data_store_cost_per_mb_month"]
         return nc
     
     def apply(self, traffic_model):
@@ -81,9 +82,15 @@ class NetCost:
             * self.processed_data_store_cost_per_mb_month * self.processed_data_retention_policy_months
         self.monthly_totals["cloud_processing_cost"] = 0
 
+    def serialize_monthly_totals(self):
+        return self.monthly_totals.reset_index().to_csv()
+    
+
+
+
 @dataclass
 class ScenarioTask():
-    months_relevant: list[int]
+    months_relevant: List[int]
     name: str
     push_frequency_per_month_min: float
     push_frequency_per_month_max: float
@@ -92,13 +99,12 @@ class ScenarioTask():
     size: int
 
 
-@dataclass
 class Scenario():
     dataset_config_compress_per_schema: bool
     dataset_config_compressed_file_format: str
     dataset_config_file_format: str
     pipeline_ref: KubernetesName
-    tasks: list[ScenarioTask]
+    tasks: List[ScenarioTask]
         
     # Serialize and deserialize as json
     def serialize(self):
@@ -130,11 +136,11 @@ class Scenario():
     def deserialize(cls, jsonstr):
         params = json.loads(jsonstr)["spec"]
         
-        scen = cls({})
+        scen = cls()
         scen.dataset_config_compress_per_schema = params["dataSetConfig"]["compressPerSchema"],
         scen.dataset_config_compressed_file_format = params["dataSetConfig"]["compressedFileFormat"],
         scen.dataset_config_file_format = params["dataSetConfig"]["fileFormat"],
-        scen.pipeline_ref = KubernetesName.deserialize(params["pipelineRef"]),
+        scen.pipeline_ref = KubernetesName.from_json(params["pipelineRef"]),
         scen.tasks = [ScenarioTask(
                 months_relevant = task["monthsRelevant"],
                 name = task["name"],
@@ -222,7 +228,6 @@ class Experiment:
     @classmethod
     def deserialize(cls, json_rec):
         exp = cls({})
-        import pdb; pdb.set_trace()
         exp.experiment_name = KubernetesName(json_rec["metadata"])
         exp.start_time = parse(json_rec["start_time"])
         exp.end_time = parse(json_rec["end_time"])
@@ -284,7 +289,7 @@ class ConfigurationConnectionEnvVars:
         if "SCENARIO" in os.environ:
             self.scenario = Scenario.deserialize(os.environ["SCENARIO"])
         if "NETCOSTS" in os.environ:
-            self.netcosts = NetCost.deserialize(json.loads(os.environ["NETCOSTS"]))
+            self.netcosts = NetCost(json.loads(os.environ["NETCOSTS"]))
         
     def get_experiment_metadata(self):
         return self.experiments

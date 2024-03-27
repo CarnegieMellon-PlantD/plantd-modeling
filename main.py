@@ -1,8 +1,10 @@
-from plantd_modeling import build, trafficmodel, twin, advanced_trafficmodel, netcost
+from plantd_modeling import build, trafficmodel, twin, advanced_trafficmodel
 import sys
 from plantd_modeling import configuration, metrics
 import json
 import os
+
+ARBITRARY_FUTURE_YEAR = 2030
 
 if sys.argv[1] == "sim_all":
     try:
@@ -15,7 +17,7 @@ if sys.argv[1] == "sim_all":
 
         #import pdb; pdb.set_trace()
         pmodel = build.build_twin(os.environ['MODEL_TYPE'], from_cached=from_cached)
-        tmodel = trafficmodel.forecast(3000)
+        tmodel = trafficmodel.forecast(ARBITRARY_FUTURE_YEAR)
         twin.simulate(pmodel, tmodel)
     except Exception as e:
         print("SIMULATION_STATUS: Failure")
@@ -31,8 +33,11 @@ elif sys.argv[1] == "advanced_net_cost_only":
             print("add 'from_cached' to use cached metrics")
             #quit()
 
-        tmodel = trafficmodel.advanced_forecast(3000, configuration.scenario)
-        netcost_results = configuration.netcosts.apply(tmodel)
+        config = configuration.ConfigurationConnectionEnvVars()
+        tmodel = advanced_trafficmodel.forecast(ARBITRARY_FUTURE_YEAR, config.scenario)
+        netcost_results = config.netcosts.apply(tmodel)
+        metrics.redis.save_str("netcost_predictions", os.environ["SCENARIO_NAME"], config.netcosts.serialize_monthly_totals())
+
     except Exception as e:
         print("SIMULATION_STATUS: Failure")
         print(f"ERROR_REASON: {type(e)}: {e}")
@@ -64,9 +69,10 @@ elif sys.argv[1] == "scenario_sim_all":
             #quit()
 
         pmodel = build.build_twin(os.environ['MODEL_TYPE'], from_cached=from_cached)
-        tmodel = 
-        tmodel = trafficmodel.forecast(3000)
-        twin.simulate(pmodel, tmodel)
+       
+        tmodel = advanced_trafficmodel.forecast(ARBITRARY_FUTURE_YEAR, configuration.scenario)
+        netcost_results = configuration.netcosts.apply(tmodel)
+        print("TO DO -- SIMULATE")
     except Exception as e:
         print("SIMULATION_STATUS: Failure")
         print(f"ERROR_REASON: {type(e)}: {e}")
@@ -78,7 +84,7 @@ elif sys.argv[1] == "build":
 elif sys.argv[1] == "forecast":
     # env will have forecast parameters, and a name for the forecast
     # this will write the forecast to a file named <name>.json
-    trafficmodel.forecast(3000)
+    trafficmodel.forecast(ARBITRARY_FUTURE_YEAR)
 elif sys.argv[1] == "simulate":
     # env will have forecast *name* and a twin name
     # Output will go into a file 
