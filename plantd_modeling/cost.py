@@ -93,7 +93,11 @@ def get_cost_data(opencost_endpoint, pipeline_label_key, pipeline_label_value,
     print("Calling: ", opencost_endpoint, " with params: ", params)
 
     # make API request
-    response = requests.get(opencost_endpoint, params=params)
+    if os.environ.get("FROM_CACHED","") == "from_cached":
+        response = metrics.redis.load_str("opencost_data", repr(params))
+    else:
+        response = requests.get(opencost_endpoint, params=params)
+        metrics.redis.save_str("opencost_data", repr(params), response.text)
     if response.status_code != 200:
         print("Error querying OpenCost API: ", response.status_code)
         print("Exiting...")
@@ -148,15 +152,21 @@ def get_prometheus_data(prometheus_endpoint):
     for metric in ["kubecost_cluster_management_cost", "node_cpu_hourly_cost", 
                     "node_ram_hourly_cost"]:
         params["query"] = metric
-        response = requests.get(prometheus_endpoint, params=params)
+        if os.environ.get("FROM_CACHED","") == "from_cached":
+            response = metrics.redis.load_str("prometheus_cost_data", metric)
+        else:
+            response = requests.get(prometheus_endpoint, params=params)
+            metrics.redis.save_str("prometheus_cost_data", metric, response.text)
         if response.status_code != 200:
             print("Error querying Prometheus API: ", response.status_code)
+            continue
             print("Exiting...")
             exit(1)
         try:
             prometheus_records[metric] = float(response.json()["data"]["result"][0]["value"][1])
         except:
             print("Error parsing Prometheus response: ", response.json())
+            continue
             print("Exiting...")
             exit(1)
     return prometheus_records
@@ -193,14 +203,14 @@ def calculate_experiment_cost(cost_data, prometheus_data, duration, opencost_end
 
     for pod_key in cost_data:
         # calculate cost of CPU and RAM
-        cpu_cost = cost_data[pod_key]["cpuCore"] * prometheus_data["node_cpu_hourly_cost"] * duration / 3600
-        ram_cost = cost_data[pod_key]["ramByteUsageAverage"] * 2**-30 * prometheus_data["node_ram_hourly_cost"] \
+        cpu_cost = cost_data[pod_key]["cpuCore"] * prometheus_data.get("node_cpu_hourly_cost",0.0) * duration / 3600
+        ram_cost = cost_data[pod_key]["ramByteUsageAverage"] * 2**-30 * prometheus_data.get("node_ram_hourly_cost",0.0) \
                     * duration / 3600
         
         pod_cost = {}
         pod_cost["direct_cost"] = cpu_cost + ram_cost + cost_data[pod_key]["loadBalancerCost"] + cost_data[pod_key]["pvCost"]
         # split overhead costs evenly among namespaces, then among pods in namespaces
-        pod_cost["shared_cost"] = (prometheus_data["kubecost_cluster_management_cost"] * duration) / \
+        pod_cost["shared_cost"] = (prometheus_data.get("kubecost_cluster_management_cost",0.0) * duration) / \
                         (num_namespaces * 3600 * len(cost_data))
         
         pod_cost["total_cost"] = pod_cost["direct_cost"] + pod_cost["shared_cost"]

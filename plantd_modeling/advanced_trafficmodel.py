@@ -102,6 +102,8 @@ def adjust_by_matching_index(series, adjustment):
     return adjusted_series
 
 class AdvancedTrafficModel(dict):
+    task_rph_set = set({})   # set of columns holding rph for tasks
+
     def __init__(self, model):
         for (k,v) in model.items(): super().__setitem__(k,v)
 
@@ -118,7 +120,7 @@ class AdvancedTrafficModel(dict):
             task_item.sending_devices_max * (month.isin(task_item.months_relevant)) \
             / (24 * days_in_month)
     
-    def generate_traffic(self, fromdate, todate, scenario):
+    def generate_traffic(self, fromdate, todate, scenario, min_or_max="max"):
         self.traffic = make_blank_frame(fromdate, todate)
         
         self.traffic["base_recs"] = self["start_row_cnt"]
@@ -126,22 +128,24 @@ class AdvancedTrafficModel(dict):
         # Note: ignores the base rate and growth rate; these are inferred from the scenario now
         self.traffic["monthly"] = adjust_by_matching_index(self.traffic["base_recs"]/self.traffic["base_recs"],  self["corrections_monthly"])
         self.traffic["hourly"] = adjust_by_matching_index(self.traffic["monthly"], self["corrections_hourly"])
-        self.traffic["bandwidth_min"] = 0
-        self.traffic["bandwidth_max"] = 0
+        self.traffic["bandwidth"] = 0
+        self.scenario = scenario
+        
         for task in scenario.tasks:
-            self.traffic["task_" + task.name + "_min_lambda"] = self.traffic["hourly"] * \
-                self.min_task_item_recs_per_hour_multiplier(task, self.traffic.index.get_level_values("Year"), self.traffic.index.get_level_values("Month")).values
+            if "task_" + task.name + "_lambda" not in self.traffic.columns:
+                self.traffic["task_" + task.name + "_lambda"] = 0
+                self.traffic["task_" + task.name + "_rph"] = 0
+            if min_or_max == "min":
+                self.traffic["task_" + task.name + "_lambda"] += self.traffic["hourly"] * \
+                    self.min_task_item_recs_per_hour_multiplier(task, self.traffic.index.get_level_values("Year"), self.traffic.index.get_level_values("Month")).values
+                # for each row, choose from poisson distribution given lambda value
+            else:
+                self.traffic["task_" + task.name + "_lambda"] += self.traffic["hourly"] * \
+                    self.max_task_item_recs_per_hour_multiplier(task, self.traffic.index.get_level_values("Year"), self.traffic.index.get_level_values("Month")).values
 
-
-            self.traffic["task_" + task.name + "_max_lambda"] = self.traffic["hourly"] * \
-                self.max_task_item_recs_per_hour_multiplier(task, self.traffic.index.get_level_values("Year"), self.traffic.index.get_level_values("Month")).values
-            # for each row, choose from poisson distribution given lambda value
-            self.traffic["task_" + task.name + "_min_rph"] = np.random.poisson(self.traffic["task_" + task.name + "_min_lambda"])
-            self.traffic["task_" + task.name + "_max_rph"] = np.random.poisson(self.traffic["task_" + task.name + "_max_lambda"])
-
-            self.traffic["bandwidth_min"] += self.traffic["task_" + task.name + "_min_rph"] * task.size
-            self.traffic["bandwidth_max"] += self.traffic["task_" + task.name + "_max_rph"] * task.size
-
+            self.traffic["task_" + task.name + "_rph"] += np.random.poisson(self.traffic["task_" + task.name + "_lambda"])
+            self.traffic["bandwidth"] += self.traffic["task_" + task.name + "_rph"] * task.size
+            self.task_rph_set.add("task_" + task.name + "_rph")
         return self.traffic
 
     def serialize_forecast_to_file(self, filename):
@@ -209,8 +213,10 @@ class AdvancedTrafficModel(dict):
         for p in range(len(self.traffic.throughput)):
             if self.traffic.index.get_level_values('Hour')[p] == 0 and self.traffic.index.get_level_values('Day')[p] == 1:
                 print(f"Simulating year {self.traffic.index.get_level_values('Year')[p]} month {self.traffic.index.get_level_values('Month')[p]}/12")
-            self.pipeline_model.input(self.traffic.iloc[p,hourloc])
 
+            #import pdb; pdb.set_trace()
+            self.pipeline_model.input(self.traffic[self.task_rph_set].iloc[p].to_dict())
+            continue 
             self.traffic.iloc[p,thruloc] = self.pipeline_model.throughput_rph
             self.traffic.iloc[p,latency_fifo] = self.pipeline_model.latency_fifo_s
             self.traffic.iloc[p,latency_lifo] = self.pipeline_model.latency_lifo_s
@@ -241,7 +247,7 @@ class AdvancedTrafficModel(dict):
         self.calculate()
         return self.traffic.queue_len
         
-def forecast(year, scenario):
+def forecast(year, scenario, min_or_max="max"):
     
     traffic_model_name = os.environ['TRAFFIC_MODEL_NAME']
     
@@ -250,10 +256,10 @@ def forecast(year, scenario):
     model = AdvancedTrafficModel.deserialize_parameters(metrics.redis.load_str("trafficmodel_params", traffic_model_name))
 
 
-    model.generate_traffic(datetime(year,1,1), datetime(year,12,31), scenario)
+    model.generate_traffic(datetime(year,1,1), datetime(year,12,31), scenario, min_or_max)
 
     #model.serialize_forecast(f"fakeredis/trafficmodel_{traffic_model_name}.csv")
     #print(f"Traffic model {traffic_model_name} saved to fakeredis/trafficmodel_{traffic_model_name}.csv")
-    metrics.redis.save_str("advanced_trafficmodel_predictions", traffic_model_name, model.serialize_forecast())
+    metrics.redis.save_str("advanced_trafficmodel_predictions_" + min_or_max, traffic_model_name, model.serialize_forecast())
     
     return model

@@ -197,6 +197,75 @@ class LoadPattern:
         lp.total_duration = json_rec["total_duration"]
         lp.total_records = json_rec["total_records"]
         return lp
+    
+class MinMax:
+    def __init__(self, min, max):
+        self.min = min
+        self.max = max
+
+    def midpoint(self):
+        return (self.min + self.max) / 2
+    
+    def serialize(self):
+        return {
+            "min": self.min,
+            "max": self.max
+        }
+    
+    @classmethod
+    def deserialize(cls, json_rec):
+        return cls(json_rec["min"], json_rec["max"])
+    
+
+@dataclass
+class DatasetSchemaLine:
+    name: str
+    numFilesPerCompressedFile: MinMax
+    numRecords: MinMax
+
+    def net_recs_per_packet(self):
+        return self.numRecords.midpoint() * self.numFilesPerCompressedFile.midpoint()
+
+class Dataset:
+    compressPerSchema: bool
+    compressedFileFormat: str
+    fileFormat: str
+    numFiles: int
+    schemas: List[DatasetSchemaLine]
+
+    def __init__(self, ds):
+        if len(ds) == 0:
+            return
+        self.raw_k8s_defn = ds
+        
+        self.compressPerSchema = ds["spec"].get("compressPerSchema", True)
+        self.compressedFileFormat = ds["spec"]["compressedFileFormat"]
+        self.fileFormat = ds["spec"]["fileFormat"]
+        self.numFiles = int(ds["spec"]["numFiles"])
+        self.schemas = [DatasetSchemaLine(schema["name"], MinMax.deserialize(schema["numFilesPerCompressedFile"]), MinMax.deserialize(schema["numRecords"])) for schema in ds["spec"]["schemas"]]
+
+    def serialize(self):
+        return {
+            "compressPerSchema": self.compressPerSchema,
+            "compressedFileFormat": self.compressedFileFormat,
+            "fileFormat": self.fileFormat,
+            "numFiles": self.numFiles,
+            "schemas": [{
+                "name": schema.name,
+                "numFilesPerCompressedFile": schema.numFilesPerCompressedFile.serialize(),
+                "numRecords": schema.numRecords.serialize()
+            } for schema in self.schemas]
+        }
+    
+    @classmethod
+    def deserialize(cls, json_rec):
+        ds = cls()
+        ds.compressPerSchema = json_rec["compressPerSchema"]
+        ds.compressedFileFormat = json_rec["compressedFileFormat"]
+        ds.fileFormat = json_rec["fileFormat"]
+        ds.numFiles = json_rec["numFiles"]
+        ds.schemas = [DatasetSchemaLine(schema["name"], MinMax.deserialize(schema["numFilesPerCompressedFile"]), MinMax.deserialize(schema["numRecords"])) for schema in json_rec["schemas"]]
+        return ds
 
 class Experiment:
     def __init__(self, experiment):
@@ -205,11 +274,13 @@ class Experiment:
         self.raw_k8s_defn = experiment
         self.experiment_name = KubernetesName.from_json(experiment['metadata'])
         self.start_time = parse(experiment['status']['startTime'])
-        self.upload_endpoint = list(experiment['status']['duration'].keys())[0]
-        self.end_time = parse_duration(experiment['status']['duration'][self.upload_endpoint]) + self.start_time
+        self.upload_endpoint = list(experiment['status']['durations'].keys())[0]
+        self.end_time = parse_duration(experiment['status']['durations'][self.upload_endpoint]) + self.start_time
         self.duration = self.end_time - self.start_time
         self.load_pattern_names = {lp["endpointName"]: KubernetesName.from_json(lp["loadPatternRef"]) 
-                                   for lp in experiment['spec']['loadPatterns']}
+                                   for lp in experiment['spec']['endpointSpecs']}
+        self.dataset_names = [ KubernetesName.from_json(ds["dataSpec"]["dataSetRef"])
+                                for ds in experiment['spec']['endpointSpecs'] ]
         self.pipeline_name = KubernetesName.from_json(experiment["spec"]["pipelineRef"]) 
         self.load_patterns : Dict[KubernetesName] = {}
         self.pipeline : Pipeline = None
@@ -277,16 +348,23 @@ class ConfigurationConnectionEnvVars:
     def __init__(self):
         self.experiments  = {}
         self.load_patterns = {}
+        self.datasets = {}
         experiment_names = os.environ["EXPERIMENT_NAMES"].split(",")
         load_pattern_names = os.environ["LOAD_PATTERN_NAMES"].split(",")
         exp_raw = json.loads(os.environ[f"EXPERIMENT_METADATA"])
         lp_raw = json.loads(os.environ[f"LOAD_PATTERN_METADATA"])
+        ds_raw = json.loads(os.environ[f"DATASET_METADATA"])
         for item in exp_raw["items"]:
             experiment_name = KubernetesName.from_json(item["metadata"])
+            if experiment_name.dotted_name not in experiment_names: 
+                continue
             self.experiments[experiment_name] = Experiment(item)
         for item in lp_raw["items"]:
             load_pattern_name = KubernetesName.from_json(item["metadata"])
             self.load_patterns[load_pattern_name] = LoadPattern(item)
+        for item in ds_raw["items"]:
+            dataset_name = KubernetesName.from_json(item["metadata"])
+            self.datasets[dataset_name] = Dataset(item)
         for exp in self.experiments.values():
             exp.load_patterns = {k:self.load_patterns[v] for k,v in exp.load_pattern_names.items()}
             #exp.pipeline = self.get_pipeline_metadata(exp.pipeline_name)
@@ -314,63 +392,6 @@ class ConfigurationConnectionDirect:
     def get_load_pattern_metadata(self, loadpattern_name: KubernetesName):
         return self.load_patterns[loadpattern_name]
 
-class ConfigurationConnectionKubernetes:
-    def __init__(self, kubernetes_service_address, group, controller_version):
-        self.kubernetes_service_address = kubernetes_service_address
-        self.group = group
-        self.controller_version = controller_version
-        self.raw_experiments = {}
-        self.raw_load_patterns = []
 
-    def get_experiment_metadata(self, experiment_names: List[KubernetesName] = [], from_cached=False):
-        # Get start and end times of experiments
-        experiment_metadata  = {}
-        query_url = f"{self.kubernetes_service_address}/apis/{self.group}/{self.controller_version}/experiments"
-        response = requests.get(query_url, verify=False, stream=False)
-        response.raise_for_status()
-        experiments = response.json()
-        self.raw_experiments = experiments
-        for exp in experiments["items"]:
-            try:
-                exp_obj = Experiment(exp)
-                
-                if exp_obj.experiment_name in experiment_names or len(experiment_names) == 0:
-                    experiment_metadata[exp_obj.experiment_name] = exp_obj
-            except Exception as e:
-                print(f"Error processing experiment {exp['metadata']['name']}: {e}")
-                continue
-
-        for exp in experiment_metadata.values():
-            exp.load_patterns = {k:self.get_load_pattern_metadata(v) for k,v in exp.load_pattern_names.items()}
-            #exp.pipeline = self.get_pipeline_metadata(exp.pipeline_name)
-
-        return experiment_metadata
-
-    def get_load_pattern_metadata(self, loadpattern_name: KubernetesName):
-        query_url = f"{self.kubernetes_service_address}/apis/{self.group}/{self.controller_version}/namespaces/{loadpattern_name.namespace}/loadpatterns/{loadpattern_name.name}"
-        response = requests.get(query_url, verify=False, stream=False)
-        response.raise_for_status()
-        lp = response.json()
-        self.raw_load_patterns.append(lp)
-        return LoadPattern(lp)
-
-    def get_pipeline_metadata(self, pipeline_name: KubernetesName):
-        query_url = f"{self.kubernetes_service_address}/apis/{self.group}/{self.controller_version}/namespaces/{pipeline_name.namespace}/pipelines/{pipeline_name.name}"
-        response = requests.get(query_url, verify=False, stream=False)
-        response.raise_for_status()
-        p = response.json()
-        return Pipeline(pipeline_name)
-    
-    def write_to_environment(self):
-        with open("environment.env", "w") as f:
-            f.write(f"EXPERIMENT_NAMES={','.join([str(e) for e in self.get_experiment_metadata().keys()])}\n")
-            f.write(f"LOAD_PATTERN_NAMES={','.join([str(e) for e in self.get_load_pattern_metadata().keys()])}\n")
-            # Write each experiment's metadata to the environment
-            for e in self.get_experiment_metadata().values():
-                f.write(f"EXPERIMENT_METADATA_{e.experiment_name.dotted_name}={json.dumps(e.serialize())}'\n")
-            # Write each load pattern's metadata to the environment
-            for lp in self.get_load_pattern_metadata().values():
-                f.write(f"LOAD_PATTERN_METADATA_{lp.load_pattern_name.dotted_name}={json.dumps(lp.serialize())}'\n")
-            
 
 

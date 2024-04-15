@@ -1,4 +1,4 @@
-from plantd_modeling import build, trafficmodel, twin, advanced_trafficmodel
+from plantd_modeling import build, trafficmodel, twin, advanced_trafficmodel, build_advanced
 import sys
 from plantd_modeling import configuration, metrics
 import json
@@ -6,7 +6,7 @@ import os
 
 ARBITRARY_FUTURE_YEAR = 2030
 
-if sys.argv[1] == "sim_all":
+if sys.argv[1] == "sim_all_old":
     try:
         from_cached = False
         if len(sys.argv) >= 3 and sys.argv[2] == "from_cached":
@@ -44,7 +44,7 @@ elif sys.argv[1] == "advanced_net_cost_only":
         print(f"ERROR_REASON: {type(e)}: {e}")
         raise e
     print("SIMULATION_STATUS: Success")
-elif sys.argv[1] == "advanced_sim_all":
+elif sys.argv[1] == "sim_all":
     try:
         from_cached = False
         if len(sys.argv) >= 3 and sys.argv[2] == "from_cached":
@@ -54,12 +54,17 @@ elif sys.argv[1] == "advanced_sim_all":
             #quit()
 
         config = configuration.ConfigurationConnectionEnvVars()
-        tmodel = advanced_trafficmodel.forecast(ARBITRARY_FUTURE_YEAR, config.scenario)
-        netcost_results = config.netcosts.apply(tmodel)
-        metrics.redis.save_str("netcost_predictions", os.environ["SCENARIO_NAME"], config.netcosts.serialize_monthly_totals())
-        #twin = build_advanced.build_advanced_twin(os.environ['MODEL_TYPE'], from_cached=from_cached)
-        #twin.simulate(tmodel, netcost_results)
-        #metrics.redis.save_str("simulation_results", os.environ["SCENARIO_NAME"], twin.serialize_simulation_results()
+        if config.scenario is None:
+            tmodel = trafficmodel.forecast(ARBITRARY_FUTURE_YEAR)
+            pmodel = build.build_twin(os.environ['MODEL_TYPE'], from_cached=from_cached)
+        else:
+            tmodel = advanced_trafficmodel.forecast(ARBITRARY_FUTURE_YEAR, config.scenario)
+            pmodel = build_advanced.build_advanced_twin(os.environ['MODEL_TYPE'], from_cached=from_cached)
+        if config.netcosts:
+            netcost_results = config.netcosts.apply(tmodel)
+            metrics.redis.save_str("netcost_predictions", os.environ["SCENARIO_NAME"], config.netcosts.serialize_monthly_totals())
+        twin.simulate(pmodel, tmodel)
+        #metrics.redis.save_str("simulation_results", os.environ["SCENARIO_NAME"], twin.serialize_simulation_results())
     except Exception as e:
         print("SIMULATION_STATUS: Failure")
         print(f"ERROR_REASON: {type(e)}: {e}")

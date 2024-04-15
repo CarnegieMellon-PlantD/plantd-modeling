@@ -9,6 +9,76 @@ import math
 class PipelineModel:
     pass
 
+@dataclass
+class SimpleSchemaAwareModel(PipelineModel):
+    policy: str
+    per_vm_hourcost: float
+    taskwise_params: dict
+    
+    def __post_init__(self):
+        if not self.policy in ["fifo","lifo","random"]:
+            raise Exception(f"Unknown scaling policy {self.policy}")
+
+    @classmethod
+    def deserialize(cls, jsonstr): 
+        params = json.loads(jsonstr)
+        if params["model_type"] != "simple-schema-aware":
+            raise Exception(f"Unknown model type {params['model_type']}")
+        return SimpleSchemaAwareModel(policy=params["policy"],
+                                      per_vm_cost=params["per_vm_cost"],
+                                      taskwise_params=params["taskwise_params"])          
+
+    def serialize(self): 
+        return json.dumps({
+            "model_type": "simple-schema-aware",
+            "taskwise_params": self.taskwise_params,
+            "per_vm_hourcost": self.per_vm_hourcost,  #misnomer; this is per "nomimal pipeline", not per "vm".
+            "policy": self.policy
+        })
+
+    def reset(self): 
+        self.queue = []   # List of (task, timestamps) tuples
+        self.time = 0   # current hour of year simulation (int)
+        self.time_done = 0.0  # Exact time in detailed simulation (float)
+        self.cumu_cost = 0.0
+    
+    def input(self, detailed_traffic_this_hour): 
+        #print(f"SimpleSchemaAwareModel.input: {detailed_traffic_this_hour}")
+        
+        newqueue = []
+        for sch in detailed_traffic_this_hour:
+            if detailed_traffic_this_hour[sch] > 0:
+                if sch.startswith("task_") and sch.endswith("_rph"):
+                    taskname = sch[5:-4]
+                newqueue = newqueue + [
+                    ({"task": taskname, "enqueued": self.time + 1.0/detailed_traffic_this_hour[sch]})
+                ]
+        self.queue = self.queue + newqueue
+        proc_this_hour=0
+        old_time_done = self.time_done
+        sum_latency = 0.0
+        while len(self.queue) > 0:
+            nextpacket = self.queue[0]
+            self.queue = self.queue[1:]
+            proc_this_hour += 1
+            nextpacket["start"] = self.time_done
+            self.time_done += 1.0/self.taskwise_params[nextpacket["task"]]["maxrate_rph"]
+            nextpacket["end"] = self.time_done
+            nextpacket["latency"] = self.taskwise_params[nextpacket["task"]]["avg_latency_s"] + \
+                nextpacket["start"] - nextpacket["enqueued"]
+            sum_latency += nextpacket["latency"]
+            
+            if self.time_done > self.time + 1: break
+
+        
+        self.throughput_rph = proc_this_hour / (self.time_done - old_time_done)
+        self.latency_fifo_s = sum_latency/proc_this_hour
+        #self.queue_worstcase_age_s += 3600
+       
+        #self.latency_lifo = self.avg_latency_s + self.queue_worstcase_age_s
+        self.hourcost = self.per_vm_hourcost
+        self.cumu_cost = self.cumu_cost + self.hourcost
+
 
 # FUTURE WORK:
 #    This just assumes the same cost per hour during the experiment as during real life.
@@ -209,7 +279,8 @@ class AutoscalingModel(PipelineModel):
             #print(f"Scale down from {self.numproc}: {avg(self.dnq_rph)} < {self.basemodel.maxrate_rph} * {self.numproc} * {self.dnPctTrigger/100.0}")
             self.numproc -= 1
             self.time_since_scale_h = 0
-            
+
+
 
 @dataclass    
 class AutoscalingModelFine(PipelineModel):

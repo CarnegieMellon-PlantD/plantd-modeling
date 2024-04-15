@@ -6,8 +6,11 @@ from dateutil.parser import parse
 import re
 from plantd_modeling import configuration, twin
 from plantd_modeling import metrics, cost
+import pandas as pd
+from sklearn.linear_model import LinearRegression
 
-def describe_experiment(config, experiment_name, from_cached=False):
+
+def describe_experiment_advanced(config, experiment_name, from_cached=False):
     
 
     prometheus_host = os.environ['PROMETHEUS_HOST']
@@ -22,6 +25,9 @@ def describe_experiment(config, experiment_name, from_cached=False):
     except requests.exceptions.HTTPError as e:
         print(f"Error getting metrics for {experiment_name}: {e.response.text}")
     mex = config.experiments[experiment_name].metrics
+    dataset_name0 = config.experiments[experiment_name].dataset_names[0]
+    dataset0 = config.datasets[dataset_name0]
+
 
     
     total_span = (mex.index[-1]-mex.index[0]).total_seconds() 
@@ -95,9 +101,10 @@ def describe_experiment(config, experiment_name, from_cached=False):
         "net_throughput": records_injected / total_span,
         "total_cost": total_cost,
         "cost_per_hour": total_cost/(total_span/3600.0),
+        "dataset_composition": { ds.name: ds.net_recs_per_packet() for ds in dataset0.schemas}
     }
 
-def build_twin(model_type, from_cached=False):
+def build_advanced_twin(model_type, from_cached=False):
     twin_name = os.environ['TWIN_NAME']
 
     config = configuration.ConfigurationConnectionEnvVars()
@@ -120,37 +127,58 @@ def build_twin(model_type, from_cached=False):
         
         return
 
-    # This particular proof-of-concept model only uses the first experiment
-    # Any others are processed, but not used
-    themodel = None
+    # Here's what has to happen here.
+    #   - For each experiment, get the metrics
+    #   - For each experiment, get the cost
+    #   - build a table of expname, schema_N_name, schema_N_count, schema_N_latency, schema_N_cost, schema_N_throughput
+    #   - save to 
+    #   - run a linear regression on the schema_N_count, schema_N_latency, schema_N_cost, schema_N_throughput
+    #   - build a simple model from that
+    #       - 
+    data_table = []
+    
     for experiment_name in config.experiments:
-        ex_info = describe_experiment(config, experiment_name, from_cached=from_cached)
+        ex_info = describe_experiment_advanced(config, experiment_name, from_cached=from_cached)
 
         metrics.redis.save_str("temp:experiment_summary", experiment_name, json.dumps(ex_info))
         metrics.redis.save_str("temp:experiment_cr", experiment_name, json.dumps(config.experiments[experiment_name].serialize()))
         metrics.redis.save_str("temp:experiment_loadpatterns", experiment_name, 
                                json.dumps({lp: config.experiments[experiment_name].load_patterns[lp].serialize() 
                                            for lp in config.experiments[experiment_name].load_patterns}))
+        
+        data_table_row = {
+            "expname": experiment_name,
+            "records_injected": ex_info["records_injected"],
+            "total_span": ex_info["total_span"],
+            "mean_latency": ex_info["mean_latency"],
+            "net_throughput": ex_info["net_throughput"],
+            "total_cost": ex_info["total_cost"],
+            "cost_per_hour": ex_info["cost_per_hour"]
+        }
+        for sch in ex_info["dataset_composition"]:
+            data_table_row[f"schema_{sch}"] = ex_info["dataset_composition"][sch]
+        data_table.append(data_table_row)
+    
+    df = pd.DataFrame(data_table)
+    X = df[ [f"schema_{sch}" for sch in ex_info["dataset_composition"]]]
+    latency_model = LinearRegression().fit(X, df["mean_latency"])
+    throughput_model = LinearRegression().fit(X, df["net_throughput"])
+    
+    return twin.SimpleSchemaAwareModel(
+        per_vm_hourcost = ex_info["cost_per_hour"],
+        policy = "fifo",
+        taskwise_params = {**{
+            sch: {"avg_latency_s": latency_model.coef_[ix] + latency_model.intercept_, 
+                  "maxrate_rph": throughput_model.coef_[ix] + throughput_model.intercept_}
+            for (ix,sch) in enumerate(ex_info["dataset_composition"])
+        }, **{
+            "base_params": {
+                "avg_latency_s": latency_model.intercept_,
+                "maxrate_rph": throughput_model.intercept_
+            }
+        }}
+    )
 
-        sm = twin.SimpleModel(maxrate_rph = ex_info["records_injected"]/ex_info["total_span"],
-                                  per_vm_hourcost = ex_info["cost_per_hour"],
-                                  avg_latency_s = ex_info["mean_latency"],
-                                  policy="fifo")
-        if model_type == "simple":
-            metrics.redis.save_str("twinmodel", twin_name, sm.serialize())
-            if themodel is None: themodel = sm
-        elif model_type == "quickscaling":
-            qm = twin.QuickscalingModel(fixed_hourcost = 0, basemodel = sm, policy="fifo")
-
-            metrics.redis.save_str("twinmodel", twin_name, qm.serialize()  )              
-            if themodel is None: themodel = qm
-        elif model_type == "autoscaling":
-            am = twin.AutoscalingModel(fixed_hourcost = 0,
-                                      upPctTrigger = 80.0, upDelay_h = 2, dnPctTrigger = 20.0, 
-                                      dnDelay_h = 2, basemodel = sm, policy="fifo")
-            metrics.redis.save_str("twinmodel", twin_name, am.serialize())
-            if themodel is None: themodel = am
-    return themodel
         
 
     #return config.experiments
