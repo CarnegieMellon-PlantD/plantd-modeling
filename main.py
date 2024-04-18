@@ -3,6 +3,7 @@ import sys
 from plantd_modeling import configuration, metrics
 import json
 import os
+import time
 
 ARBITRARY_FUTURE_YEAR = 2030
 
@@ -121,7 +122,28 @@ elif sys.argv[1] == "simulate":
     #   - worst case latency, queue length
     twin.simulate()
 elif sys.argv[1] == "end_detect":
-    print("End Detect (not implemented)")
+    config = configuration.ConfigurationConnectionEnvVars()
+    DEBOUNCE_PERIOD = os.environ['DEBOUNCE_PERIOD']
+    POD_DETATCH_ADJUSTMENT = os.environ['POD_DETATCH_ADJUSTMENT']
+    experiment = list(config.experiments.keys())[0]   # Should just be one experiment
+
+    baseline = metrics.get_stages_levels(experiment, DEBOUNCE_PERIOD, before_start = DEBOUNCE_PERIOD*2)
+    in_progress = False
+    while True:
+	    time.sleep(DEBOUNCE_PERIOD)
+        recent_pd = metrics.get_stages_levels(experiment, DEBOUNCE_PERIOD)
+        
+       if in_progress == False:
+            crossing_info = metrics.detect_crossing(baseline, recent_pd)
+            if crossing_info is not None and  crossing_info["transition_direction"] == "upwards":
+                in_progress = True
+	    else:
+		    crossing_info = metrics.detect_crossing(baseline, recent_pd)
+            if crossing_info is not None and  crossing_info["transition_direction"] == "downwards":
+            print("PROCESS ENDED AT ", crossing_info["transition_time"]; waiting)
+		    time.sleep (POD_DETATCH_ADJUSTMENT - (now - crossing_info["transition_time"]))
+		    print ('PROCESS STOPPED AT {crossing_info["transition_time"]}; waiting until {POD_DETATCH_ADJUSTMENT - (now - crossing_info["transition_time"])}')
+		    exit()
 elif sys.argv[1] == "test_write":
     exps = build.build_model()
     for e in exps:

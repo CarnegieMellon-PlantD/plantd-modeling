@@ -45,6 +45,92 @@ class Metrics:
         self.prometheus_host = prometheus_host
         
 
+    def get_stages_levels(self, experiment, duration_s, threshold, before_start = None):
+        """
+        Get the averaged rps levels for all pipeline stages
+            - experiment = experiment object that we're watching
+            - duration_s = how long a time span we'll e querying
+            - before_start:
+                if None, we'll query from duration_s ago until now.
+                if not None, we'll go back before_start+duration_s before the beginning of the experiment
+        """
+        url = f"{self.prometheus_host}/api/v1/query_range"
+        step_interval = 1
+        if before_start is None:
+            start_ts = datetime.now().timestamp() - duration_s
+        else:
+            start_ts = experiment.start_time.timestamp() - before_start
+        end_ts = start_ts + duration_s
+        #
+        query = REALTIME_THROUGHPUT_QUERY.format(params=experiment.experiment_name, step=step_interval)
+        print(query, datetime.utcfromtimestamp(start_ts), datetime.utcfromtimestamp(end_ts), step_interval)
+        print(url)  
+        print(query)
+        response = requests.get(url, params={'query': query, 'start': start_ts, 'end': end_ts, 'step': step_interval}, 
+            #auth=('prometheus', prometheus_password), 
+            verify=False, stream=False)
+
+        response.raise_for_status()
+        if len(response.json()['data']['result']) == 0:
+            raise PrometheusAgedOutException(f"No data found for {experiment.experiment_name}")
+
+        df = pd.read_csv(io.StringIO(response.text))
+        phase_columns = [c for c in df.columns if c.endswith("_phase")]
+        for pc in phase_columns:
+            df["aggregate_activity"] += df[pc]
+        df['above_threshold'] = df['aggregate_activity'] > threshold
+        crossings = df['above_threshold'].diff().ne(0) & df['above_threshold'].shift().fillna(False)
+
+        # Calculate the crossing goodness metric
+        def crossing_goodness_downward(index):
+            left_mask = (df.loc[:index, 'above_threshold'] > threshold)
+            left_area = df.loc[:index][left_mask]['above_threshold'] - threshold
+
+            right_mask = (df.loc[index:, 'above_threshold'] < threshold)
+            right_area = threshold - df.loc[index:][right_mask]['above_threshold']
+
+            return left_area.sum() + right_area.sum()
+        
+        def crossing_goodness_upward(index):
+            left_mask = (df.loc[:index, 'above_threshold'] < threshold)
+            left_area = threshold - df.loc[:index][left_mask]['above_threshold']
+
+            right_mask = (df.loc[index:, 'above_threshold'] > threshold)
+            right_area = df.loc[index:][right_mask]['above_threshold'] - threshold
+
+            return left_area.sum() + right_area.sum()
+
+        if before_start is not None:
+            return df["aggregate_activity"].mean()
+        else:
+            start_mean = df["aggregate_activity"].head(.1*len(df)).mean()
+            end_mean = df["aggregate_activity"].tail(.1*len(df)).mean()
+
+            if (start_mean > threshold) == (end_mean > threshold):
+                return None
+            elif start_mean > threshold:
+                crossing_scores = {idx: crossing_goodness_downward(idx) for idx in df[crossings].index}
+
+                # Find the best crossing point
+                best_crossing_index = max(crossing_scores, key=crossing_scores.get)
+                best_crossing_time = df.loc[best_crossing_index, 'time']
+
+                return {
+                    "transition_time": best_crossing_time,
+                    "transition_direction": "downwards"
+                }
+            else:
+                crossing_scores = {idx: crossing_goodness_upward(idx) for idx in df[crossings].index}
+
+                # Find the best crossing point
+                best_crossing_index = max(crossing_scores, key=crossing_scores.get)
+                best_crossing_time = df.loc[best_crossing_index, 'time']
+
+                return {
+                    "transition_time": best_crossing_time,
+                    "transition_direction": "upwards"
+                }
+    
     # First, query from start time till now.  Figure out the right step interval to get < 11,000 samples
     # next, find where it goes quiet
     # then recalculate end time, and get new step interval
