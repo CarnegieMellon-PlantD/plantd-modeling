@@ -1,0 +1,61 @@
+{
+    "apiVersion": "v1",
+    "items": [
+        {
+            "apiVersion": "windtunnel.plantd.org/v1alpha1",
+            "kind": "Experiment",
+            "metadata": {
+                "creationTimestamp": "2024-04-19T15:35:28Z",
+                "finalizers": [
+                    "experiment.windtunnel.plantd.org/finalizer"
+                ],
+                "generation": 2,
+                "name": "sample-experiment",
+                "namespace": "test-pipeline",
+                "resourceVersion": "132928704",
+                "uid": "4cdd3d3b-812b-4cb7-8cdb-9171246b6166"
+            },
+            "spec": {
+                "drainingTime": "10m0s",
+                "endpointSpecs": [
+                    {
+                        "dataSpec": {
+                            "dataSetRef": {
+                                "name": "sample-dataset",
+                                "namespace": "test-pipeline"
+                            }
+                        },
+                        "endpointName": "upload",
+                        "loadPatternRef": {
+                            "name": "sample-loadpattern",
+                            "namespace": "test-pipeline"
+                        },
+                        "storageSize": "5Gi"
+                    }
+                ],
+                "pipelineRef": {
+                    "name": "sample-pipeline",
+                    "namespace": "test-pipeline"
+                }
+            },
+            "status": {
+                "cloudProvider": "aws",
+                "completionTime": "2024-04-19T15:56:10Z",
+                "drainingStartTime": "2024-04-19T15:46:10Z",
+                "durations": {
+                    "upload": "10m0s"
+                },
+                "enableCostCalculation": true,
+                "jobStatus": "Completed",
+                "startTime": "2024-04-19T15:35:43Z",
+                "tags": {
+                    "pipeline-infrastructure": "testpipeline"
+                }
+            }
+        }
+    ],
+    "kind": "List",
+    "metadata": {
+        "resourceVersion": ""
+    }
+}
