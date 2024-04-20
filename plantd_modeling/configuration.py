@@ -106,22 +106,12 @@ class ScenarioTask():
 
 
 class Scenario():
-    dataset_config_compress_per_schema: bool
-    dataset_config_compressed_file_format: str
-    dataset_config_file_format: str
-    pipeline_ref: KubernetesName
     tasks: List[ScenarioTask]
         
     # Serialize and deserialize as json
     def serialize(self):
         return json.dumps({
             "spec": {
-                "dataSetConfig": {
-                    "compressPerSchema": self.dataset_config_compress_per_schema,
-                    "compressedFileFormat": self.dataset_config_compressed_file_format,
-                    "fileFormat": self.dataset_config_file_format
-                },
-                "pipelineRef": self.pipeline_ref.serialize(),
                 "tasks": [{
                     "monthsRelevant": task.months_relevant,
                     "name": task.name,
@@ -143,10 +133,6 @@ class Scenario():
         params = json.loads(jsonstr)["spec"]
         
         scen = cls()
-        scen.dataset_config_compress_per_schema = params["dataSetConfig"]["compressPerSchema"],
-        scen.dataset_config_compressed_file_format = params["dataSetConfig"]["compressedFileFormat"],
-        scen.dataset_config_file_format = params["dataSetConfig"]["fileFormat"],
-        scen.pipeline_ref = KubernetesName.from_json(params["pipelineRef"]),
         scen.tasks = [ScenarioTask(
                 months_relevant = task["monthsRelevant"],
                 name = task["name"],
@@ -279,9 +265,9 @@ class Experiment:
         self.duration = self.end_time - self.start_time
         self.load_pattern_names = {lp["endpointName"]: KubernetesName.from_json(lp["loadPatternRef"]) 
                                    for lp in experiment['spec']['endpointSpecs']}
-        self.dataset_names = [ KubernetesName.from_json(ds["dataSpec"]["dataSetRef"])
+        self.dataset_names = [ ds["dataSpec"]["dataSetRef"]["name"]
                                 for ds in experiment['spec']['endpointSpecs'] ]
-        self.pipeline_name = KubernetesName.from_json(experiment["spec"]["pipelineRef"]) 
+        self.pipeline_name = KubernetesName(self.experiment_name.namespace + "." + experiment["spec"]["pipelineRef"]["name"]) 
         self.load_patterns : Dict[KubernetesName] = {}
         self.pipeline : Pipeline = None
         self.metrics : DataFrame = None

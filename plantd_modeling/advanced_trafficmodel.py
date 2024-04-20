@@ -214,9 +214,7 @@ class AdvancedTrafficModel(dict):
             if self.traffic.index.get_level_values('Hour')[p] == 0 and self.traffic.index.get_level_values('Day')[p] == 1:
                 print(f"Simulating year {self.traffic.index.get_level_values('Year')[p]} month {self.traffic.index.get_level_values('Month')[p]}/12")
 
-            #import pdb; pdb.set_trace()
-            self.pipeline_model.input(self.traffic[self.task_rph_set].iloc[p].to_dict())
-            continue 
+            self.pipeline_model.input(self.traffic[self.task_rph_set].iloc[p].to_dict()) 
             self.traffic.iloc[p,thruloc] = self.pipeline_model.throughput_rph
             self.traffic.iloc[p,latency_fifo] = self.pipeline_model.latency_fifo_s
             self.traffic.iloc[p,latency_lifo] = self.pipeline_model.latency_lifo_s

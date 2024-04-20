@@ -55,8 +55,8 @@ elif sys.argv[1] == "sim_all":
             #quit()
 
         config = configuration.ConfigurationConnectionEnvVars()
-        if config.scenario is None:
-            tmodel = trafficmodel.forecast(ARBITRARY_FUTURE_YEAR)
+        if config.scenario is None:  # Could also check for schemaaware as DIGITAL_TWIN_TYPE, but redundant
+            tmodel = trafficmodel.forecast(ARBITRARY_FUTURE_YEAR, from_cached=from_cached)
             pmodel = build.build_twin(os.environ['MODEL_TYPE'], from_cached=from_cached)
         else:
             tmodel = advanced_trafficmodel.forecast(ARBITRARY_FUTURE_YEAR, config.scenario)
@@ -130,20 +130,22 @@ elif sys.argv[1] == "end_detect":
     baseline = metrics.get_stages_levels(experiment, DEBOUNCE_PERIOD, before_start = DEBOUNCE_PERIOD*2)
     in_progress = False
     while True:
-	    time.sleep(DEBOUNCE_PERIOD)
+        time.sleep(DEBOUNCE_PERIOD)
         recent_pd = metrics.get_stages_levels(experiment, DEBOUNCE_PERIOD)
         
-       if in_progress == False:
+        if in_progress == False:
             crossing_info = metrics.detect_crossing(baseline, recent_pd)
             if crossing_info is not None and  crossing_info["transition_direction"] == "upwards":
                 in_progress = True
-	    else:
-		    crossing_info = metrics.detect_crossing(baseline, recent_pd)
+        else:
+            crossing_info = metrics.detect_crossing(baseline, recent_pd)
             if crossing_info is not None and  crossing_info["transition_direction"] == "downwards":
-            print("PROCESS ENDED AT ", crossing_info["transition_time"]; waiting)
-		    time.sleep (POD_DETATCH_ADJUSTMENT - (now - crossing_info["transition_time"]))
-		    print ('PROCESS STOPPED AT {crossing_info["transition_time"]}; waiting until {POD_DETATCH_ADJUSTMENT - (now - crossing_info["transition_time"])}')
-		    exit()
+                now = time.time()
+                wait_time = POD_DETATCH_ADJUSTMENT - (now - crossing_info["transition_time"])
+                print("PROCESS ENDED AT ", crossing_info["transition_time"], " waiting ", )
+                time.sleep (wait_time)
+                print ('PROCESS STOPPED AT {crossing_info["transition_time"]}; waiting until {POD_DETATCH_ADJUSTMENT - (now - crossing_info["transition_time"])}')
+                exit()
 elif sys.argv[1] == "test_write":
     exps = build.build_model()
     for e in exps:

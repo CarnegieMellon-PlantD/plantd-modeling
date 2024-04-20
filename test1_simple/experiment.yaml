@@ -1,0 +1,18 @@
+apiVersion: windtunnel.plantd.org/v1alpha1
+kind: Experiment
+metadata:
+  name: test1-experiment
+  namespace: test-pipeline
+spec:
+  pipelineRef:
+    name: sample-pipeline
+  endpointSpecs:
+    - endpointName: upload
+      dataSpec:
+        dataSetRef:
+          name: test1-dataset
+      loadPatternRef:
+        name: test1-loadpattern
+        namespace: test-pipeline
+      storageSize: 5Gi
+  drainingTime: 10m

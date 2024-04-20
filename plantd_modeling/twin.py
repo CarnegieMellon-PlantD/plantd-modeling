@@ -375,7 +375,6 @@ def simulate(twin, traffic):
                "max_queue": float(traffic.traffic.queue_len.max()), "avg_throughput_rph": float(traffic.traffic.throughput.mean()),
                 "max_throughput_rph": float(traffic.traffic.throughput.max()),
                 "sla_check": sla_check}))
-    print(f"Wrote simulation results to redis/simulation_{sim_name}.csv and redis/simulation_{sim_name}.json")
     return twin
 
 

@@ -61,11 +61,11 @@ python main.py sim_all $FROM_CACHED
 
 # Check things that should have been populated
 echo "plantd:trafficmodel_predictions:traffic-model-nominal:" `redis-cli get plantd:trafficmodel_predictions:traffic-model-nominal | wc -l`
-echo "plantd:metrics:test-pipeline.test1-experiment:" `redis-cli get plantd:metrics:test-pipeline.test1-experiment | wc -l`
-echo "plantd:experiment_summary:test-pipeline.test1-experiment:" `redis-cli get plantd:experiment_summary:test-pipeline.test1-experiment | wc -l`
-echo "plantd:twinmodel:test-pipeline.test1-twin:" `redis-cli get plantd:twinmodel:test-pipeline.test1-twin | wc -l`
-echo "plantd:simulation_traffic:test-pipeline.test1-sim:" `redis-cli get plantd:simulation_traffic:test-pipeline.test1-sim | wc -l`
-echo "plantd:simulation_summary:test-pipeline.test1-sim:" `redis-cli get plantd:simulation_summary:test-pipeline.test1-sim | wc -l`
+echo "plantd:metrics:test-pipeline.test1-experiment:" `redis-cli get plantd:metrics:test1.sample-experiment | wc -l`
+echo "plantd:experiment_summary:test-pipeline.test1-experiment:" `redis-cli get plantd:experiment_summary:test1.sample-experiment | wc -l`
+echo "plantd:twinmodel:test-pipeline.test1-twin:" `redis-cli get plantd:twinmodel:test1.test-twin | wc -l`
+echo "plantd:simulation_traffic:test-pipeline.test1-sim:" `redis-cli get plantd:simulation_traffic:test1.test-sim | wc -l`
+echo "plantd:simulation_summary:test-pipeline.test1-sim:" `redis-cli get plantd:simulation_summary:test1.test-sim | wc -l`
 
 
 # Note: writes to these REDIS keys:

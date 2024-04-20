@@ -7,15 +7,21 @@ import re
 from plantd_modeling import configuration, metrics
 import io
 
-def forecast(year):
+def forecast(year, from_cached=False):
     
     traffic_model_name = os.environ['TRAFFIC_MODEL_NAME']
+    traffic_model = os.environ['TRAFFIC_MODEL']
     prometheus_host = os.environ['PROMETHEUS_HOST']
     prometheus_password = os.environ['PROMETHEUS_PASSWORD']
     
     config = configuration.ConfigurationConnectionEnvVars()
-    #model = TrafficModel.deserialize_parameters_from_file(open(f"fakeredis/trafficmodel_{traffic_model_name}.json").read())
-    model = TrafficModel.deserialize_parameters(metrics.redis.load_str("trafficmodel_params", traffic_model_name))
+    # if we're working from cache
+    if from_cached:
+        model = TrafficModel.deserialize_parameters(metrics.redis.load_str("trafficmodel_params", traffic_model_name))
+    else:
+        model = TrafficModel.deserialize_parameters(traffic_model)
+        metrics.redis.save_str("trafficmodel_params", traffic_model_name, model.serialize_parameters())
+
     model.generate_traffic(datetime(year,1,1), datetime(year,12,31))
 
     #model.serialize_forecast(f"fakeredis/trafficmodel_{traffic_model_name}.csv")

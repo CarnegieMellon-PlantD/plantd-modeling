@@ -17,7 +17,7 @@ def get_cost(source, experiment_name, pipeline_namespace, start_time, end_time, 
         return None
     
     if from_cached:
-        experiment_cost = metrics.redis.load_dict("experiment_cost", experiment_name)
+        experiment_cost = metrics.redis.load_dict("cache:experiment_cost", experiment_name)
         return experiment_cost
     
     # Get endpoints from environment variables
@@ -25,12 +25,8 @@ def get_cost(source, experiment_name, pipeline_namespace, start_time, end_time, 
     opencost_endpoint = os.environ.get("OPENCOST_ENDPOINT", "http://localhost:9003/allocation")
     
     # Get experiment tag and start and end times from environment variables
-    pipeline_label_key = os.environ.get("PIPELINE_LABEL_KEY", "app")
-    pipepline_label_value = os.environ.get("PIPELINE_LABEL_VALUE", "unzipper")
-   
-    # Get experiment tag and start and end times from environment variables
-    pipeline_label_key = os.environ.get("PIPELINE_LABEL_KEY", None)
-    pipepline_label_value = os.environ.get("PIPELINE_LABEL_VALUE", None)
+    pipeline_label_keys = os.environ.get("PIPELINE_LABEL_KEYS", None)
+    pipepline_label_values = os.environ.get("PIPELINE_LABEL_VALUES", None)
     #pipeline_namespace = os.environ.get("PIPELINE_NAMESPACE", "ubi")
     #start_time = os.environ.get("START_TIME", "2023-11-16T22:50:00Z")
     #end_time = os.environ.get("END_TIME", "2023-11-17T00:40:00Z")
@@ -46,8 +42,8 @@ def get_cost(source, experiment_name, pipeline_namespace, start_time, end_time, 
     #end_time = end_time.replace(tzinfo=dt.timezone.utc)
 
     # get cost data from OpenCost API
-    cost_data = get_cost_data(opencost_endpoint, pipeline_label_key, 
-                                pipepline_label_value, pipeline_namespace, 
+    cost_data = get_cost_data(opencost_endpoint, pipeline_label_keys, 
+                                pipepline_label_values, pipeline_namespace, 
                                 start_time, end_time)
 
 
@@ -64,7 +60,7 @@ def get_cost(source, experiment_name, pipeline_namespace, start_time, end_time, 
 
     return(experiment_cost)
 
-def get_cost_data(opencost_endpoint, pipeline_label_key, pipeline_label_value, 
+def get_cost_data(opencost_endpoint, pipeline_label_keys, pipeline_label_values, 
         pipeline_namespace, start_time, end_time):
     """
     Fetches cost data from OpenCost API.
@@ -83,8 +79,10 @@ def get_cost_data(opencost_endpoint, pipeline_label_key, pipeline_label_value,
     params["window"] = start_time.strftime('%Y-%m-%dT%H:%M:%SZ') + "," + \
         end_time.strftime('%Y-%m-%dT%H:%M:%SZ')
     # params["aggregate"] = "namespace"
-    if pipeline_label_key is not None and len(pipeline_label_key) > 0 :
-        params["aggregate"] = "namespace,label:" + pipeline_label_key + ",pod"
+
+    # TODO: what if keys contains multiple keys (i.e. commas)
+    if pipeline_label_keys is not None and len(pipeline_label_keys) > 0 :
+        params["aggregate"] = "namespace,label:" + pipeline_label_keys + ",pod"
     else:
         params["aggregate"] = "namespace,pod"
     params["accumulate"] = "false"
@@ -94,10 +92,10 @@ def get_cost_data(opencost_endpoint, pipeline_label_key, pipeline_label_value,
 
     # make API request
     if os.environ.get("FROM_CACHED","") == "from_cached":
-        response = metrics.redis.load_str("opencost_data", repr(params))
+        response = metrics.redis.load_str("cache:opencost_data", repr(params))
     else:
         response = requests.get(opencost_endpoint, params=params)
-        metrics.redis.save_str("opencost_data", repr(params), response.text)
+        metrics.redis.save_str("cache:opencost_data", repr(params), response.text)
     if response.status_code != 200:
         print("Error querying OpenCost API: ", response.status_code)
         print("Exiting...")
@@ -105,8 +103,9 @@ def get_cost_data(opencost_endpoint, pipeline_label_key, pipeline_label_value,
 
     # load required records into dict and return 
     try: 
-        if pipeline_label_key is not None and len(pipeline_label_key) > 0:
-            response_key = pipeline_namespace + "/" + pipeline_label_value
+        # TODO: what if keys and values contain multiple keys (i.e. commas) 
+        if pipeline_label_keys is not None and len(pipeline_label_keys) > 0:
+            response_key = pipeline_namespace + "/" + pipeline_label_values
         else:
             response_key = pipeline_namespace
         print("Response key: ", response_key)        
@@ -153,10 +152,10 @@ def get_prometheus_data(prometheus_endpoint):
                     "node_ram_hourly_cost"]:
         params["query"] = metric
         if os.environ.get("FROM_CACHED","") == "from_cached":
-            response = metrics.redis.load_str("prometheus_cost_data", metric)
+            response = metrics.redis.load_str("cache:prometheus_cost_data", metric)
         else:
             response = requests.get(prometheus_endpoint, params=params)
-            metrics.redis.save_str("prometheus_cost_data", metric, response.text)
+            metrics.redis.save_str("cache:prometheus_cost_data", metric, response.text)
         if response.status_code != 200:
             print("Error querying Prometheus API: ", response.status_code)
             continue
@@ -251,7 +250,7 @@ def count_namespaces(opencost_endpoint):
     return num_namespaces
 
 def write_experiment_cost(experiment_name, experiment_cost):
-    metrics.redis.save_dict("experiment_cost", experiment_name, experiment_cost)
+    metrics.redis.save_dict("cache:experiment_cost", experiment_name, experiment_cost)
  
     #with open(f"fakeredis/experiment_cost_{experiment_name}.json","w") as f:
     #    json.dump(experiment_cost, f)

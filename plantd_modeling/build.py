@@ -49,8 +49,6 @@ def describe_experiment(config, experiment_name, from_cached=False):
 
     mean_latency = sum([mean_latencies[phase] for phase in mean_latencies]) /1000
     median_latency = sum([median_latencies[phase] for phase in median_latencies])/1000
-
-
     
     # Latest earliest time is the first time a packet has made it all the way through the pipeline; this is the 
     # time we'll use to calculate latency
@@ -126,9 +124,9 @@ def build_twin(model_type, from_cached=False):
     for experiment_name in config.experiments:
         ex_info = describe_experiment(config, experiment_name, from_cached=from_cached)
 
-        metrics.redis.save_str("temp:experiment_summary", experiment_name, json.dumps(ex_info))
-        metrics.redis.save_str("temp:experiment_cr", experiment_name, json.dumps(config.experiments[experiment_name].serialize()))
-        metrics.redis.save_str("temp:experiment_loadpatterns", experiment_name, 
+        metrics.redis.save_str("experiment_summary", experiment_name, json.dumps(ex_info))
+        metrics.redis.save_str("cache:experiment_cr", experiment_name, json.dumps(config.experiments[experiment_name].serialize()))
+        metrics.redis.save_str("cache:experiment_loadpatterns", experiment_name, 
                                json.dumps({lp: config.experiments[experiment_name].load_patterns[lp].serialize() 
                                            for lp in config.experiments[experiment_name].load_patterns}))
 

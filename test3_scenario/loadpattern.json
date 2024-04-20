@@ -1,0 +1,97 @@
+{
+    "apiVersion": "v1",
+    "items": [
+        {
+            "apiVersion": "windtunnel.plantd.org/v1alpha1",
+            "kind": "LoadPattern",
+            "metadata": {
+                "creationTimestamp": "2024-04-19T15:35:15Z",
+                "generation": 1,
+                "name": "sample-loadpattern",
+                "namespace": "test-pipeline",
+                "resourceVersion": "132922469",
+                "uid": "c448e575-6754-438b-91dd-f731c4f93ea0"
+            },
+            "spec": {
+                "maxVUs": 100,
+                "preAllocatedVUs": 30,
+                "stages": [
+                    {
+                        "duration": "4m",
+                        "target": 10
+                    },
+                    {
+                        "duration": "3m",
+                        "target": 50
+                    },
+                    {
+                        "duration": "3m",
+                        "target": 40
+                    }
+                ],
+                "startRate": 30,
+                "timeUnit": "1s"
+            }
+        },
+        {
+            "apiVersion": "windtunnel.plantd.org/v1alpha1",
+            "kind": "LoadPattern",
+            "metadata": {
+                "creationTimestamp": "2024-04-20T19:59:24Z",
+                "generation": 1,
+                "name": "test1-loadpattern",
+                "namespace": "test-pipeline",
+                "resourceVersion": "133416758",
+                "uid": "e873a33b-3dc9-4827-b18a-074e650a07cb"
+            },
+            "spec": {
+                "maxVUs": 100,
+                "preAllocatedVUs": 30,
+                "stages": [
+                    {
+                        "duration": "4m",
+                        "target": 10
+                    },
+                    {
+                        "duration": "3m",
+                        "target": 50
+                    },
+                    {
+                        "duration": "3m",
+                        "target": 40
+                    }
+                ],
+                "startRate": 30,
+                "timeUnit": "1s"
+            }
+        },
+        {
+            "apiVersion": "windtunnel.plantd.org/v1alpha1",
+            "kind": "LoadPattern",
+            "metadata": {
+                "creationTimestamp": "2024-04-20T21:38:23Z",
+                "generation": 1,
+                "name": "test3-loadpattern",
+                "namespace": "test-pipeline",
+                "resourceVersion": "133445800",
+                "uid": "06f1f351-d7fe-41e8-9608-5ab112276fe6"
+            },
+            "spec": {
+                "maxVUs": 100,
+                "preAllocatedVUs": 30,
+                "stages": [
+                    {
+                        "duration": "5m",
+                        "target": 200
+                    }
+                ],
+                "startRate": 0,
+                "timeUnit": "1s"
+            }
+        }
+    ],
+    "kind": "List",
+    "metadata": {
+        "resourceVersion": ""
+    }
+}

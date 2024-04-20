@@ -16,12 +16,12 @@ REALTIME_THROUGHPUT_QUERY = 'sum by(span_name)(irate(calls_total{{status_code="S
 REALTIME_LATENCY_QUERY = 'irate(duration_milliseconds_sum{{status_code="STATUS_CODE_UNSET", job="{params.name}", namespace="{params.namespace}"}}[30s]) / irate(duration_milliseconds_count{{status_code="STATUS_CODE_UNSET", job="{params.name}", namespace="{params.namespace}"}}[30s])'
 
 class Redis:
-    def __init__(self, redis_host, redis_password) -> None:
+    def __init__(self, redis_host, redis_port, redis_password) -> None:
         self.redis_host = redis_host
         self.redis_password = redis_password
         if redis_host is None or redis_host == "":
             raise Exception("REDIS_HOST environment variable not set")
-        self.r = redis.Redis(host=redis_host, port=6379, db=0, decode_responses=True, password=redis_password)
+        self.r = redis.Redis(host=redis_host, port=redis_port, db=0, decode_responses=True, password=redis_password)
 
     def save_dict(self, type, name, data):
         self.r.set(f"plantd:{type}:{name}", json.dumps(data))
@@ -30,6 +30,7 @@ class Redis:
         return json.loads(self.r.get(f"plantd:{type}:{name}"))
 
     def save_str(self, type, name, data):
+        print("WRITING TO REDIS", f"plantd:{type}:{name}", data[:100],"...")
         self.r.set(f"plantd:{type}:{name}", data)
 
     def load_str(self, type, name):
@@ -37,8 +38,9 @@ class Redis:
 
 redis_password = os.environ.get("REDIS_PASSWORD", None)
 redis_host = os.environ.get("REDIS_HOST", None)
+redis_port = os.environ.get("REDIS_PORT", None)
 
-redis = Redis(redis_host, redis_password)    
+redis = Redis(redis_host, redis_port, redis_password)    
 
 class Metrics:
     def __init__(self, prometheus_host) -> None:
@@ -143,6 +145,7 @@ class Metrics:
         end_ts = datetime.now().timestamp()
         step_interval = max(30, int((end_ts - start_ts) / 11000))
         #
+
         query = REALTIME_THROUGHPUT_QUERY.format(params=experiment.experiment_name, step=step_interval)
         print(query, datetime.utcfromtimestamp(start_ts), datetime.utcfromtimestamp(end_ts), step_interval)
         print(url)  

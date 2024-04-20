@@ -1,0 +1,108 @@
+{
+    "apiVersion": "windtunnel.plantd.org/v1alpha1",
+    "kind": "Scenario",
+    "metadata": {
+        "creationTimestamp": "2024-04-20T22:37:48Z",
+        "generation": 1,
+        "name": "test3-scenario",
+        "namespace": "test-pipeline",
+        "resourceVersion": "133463642",
+        "uid": "1dad5a59-7ffd-4800-bb23-0652688fe64e"
+    },
+    "spec": {
+        "tasks": [
+            {
+                "monthsRelevant": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12
+                ],
+                "name": "product",
+                "pushFrequencyPerMonth": {
+                    "max": 90,
+                    "min": 30
+                },
+                "sendingDevices": {
+                    "max": 5000,
+                    "min": 1000
+                },
+                "size": "100Ki"
+            },
+            {
+                "monthsRelevant": [
+                    6,
+                    7,
+                    8,
+                    9,
+                    10
+                ],
+                "name": "supplier",
+                "pushFrequencyPerMonth": {
+                    "max": 90,
+                    "min": 30
+                },
+                "sendingDevices": {
+                    "max": 500,
+                    "min": 100
+                },
+                "size": "100Ki"
+            },
+            {
+                "monthsRelevant": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    11,
+                    12
+                ],
+                "name": "supplier",
+                "pushFrequencyPerMonth": {
+                    "max": 90,
+                    "min": 30
+                },
+                "sendingDevices": {
+                    "max": 400,
+                    "min": 150
+                },
+                "size": "100Ki"
+            },
+            {
+                "monthsRelevant": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12
+                ],
+                "name": "warehouse",
+                "pushFrequencyPerMonth": {
+                    "max": 90,
+                    "min": 30
+                },
+                "sendingDevices": {
+                    "max": 5000,
+                    "min": 1000
+                },
+                "size": "100Ki"
+            }
+        ]
+    }
+}
