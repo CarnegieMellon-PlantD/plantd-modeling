@@ -62,9 +62,14 @@ elif sys.argv[1] == "sim_all":
             tmodel = advanced_trafficmodel.forecast(ARBITRARY_FUTURE_YEAR, config.scenario)
             pmodel = build_advanced.build_advanced_twin(os.environ['MODEL_TYPE'], from_cached=from_cached)
         if config.netcosts:
-            netcost_results = config.netcosts.apply(tmodel)
-            metrics.redis.save_str("netcost_predictions", os.environ["SCENARIO_NAME"], config.netcosts.serialize_monthly_totals())
+            try:
+                netcost_results = config.netcosts.apply(tmodel)
+            except Exception as e:
+                print("Netcosts not applied", e)
+            #metrics.redis.save_str("netcost_predictions", os.environ["SCENARIO_NAME"], config.netcosts.serialize_monthly_totals())
         twin.simulate(pmodel, tmodel)
+    
+
         #metrics.redis.save_str("simulation_results", os.environ["SCENARIO_NAME"], twin.serialize_simulation_results())
     except Exception as e:
         print("SIMULATION_STATUS: Failure")

@@ -196,9 +196,9 @@ class AdvancedTrafficModel(dict):
         self.traffic["throughput"] = 0
         self.traffic["latency_lifo"] = 0
         self.traffic["latency_fifo"] = 0
-        self.traffic["cost_per_rec"] = 0.0
-        self.traffic["cost"] = 0
-        self.traffic["cumu_cost"] = 0
+        self.traffic["pipeline_cost_per_rec"] = 0.0
+        self.traffic["pipeline_cost"] = 0
+        self.traffic["cumu_pipeline_cost"] = 0
         self.traffic["scaleout"] = 0
         queue = 0
         queue_worstcase_age_s = 0
@@ -207,9 +207,9 @@ class AdvancedTrafficModel(dict):
         hourloc = self.traffic.columns.get_loc("hourly")
         queueloc = self.traffic.columns.get_loc("queue_len")
         latency_lifo = self.traffic.columns.get_loc("latency_lifo")
-        cost_per_rec = self.traffic.columns.get_loc("cost_per_rec")
-        cost = self.traffic.columns.get_loc("cost")
-        cumu_cost = self.traffic.columns.get_loc("cumu_cost")
+        pipeline_cost_per_rec = self.traffic.columns.get_loc("pipeline_cost_per_rec")
+        pipeline_cost = self.traffic.columns.get_loc("pipeline_cost")
+        cumu_pipeline_cost = self.traffic.columns.get_loc("cumu_pipeline_cost")
         scaleout = self.traffic.columns.get_loc("scaleout")
         self.pipeline_model.reset()
         for p in range(len(self.traffic.throughput)):
@@ -222,9 +222,9 @@ class AdvancedTrafficModel(dict):
             #self.traffic.iloc[p,latency_lifo] = self.pipeline_model.latency_lifo_s
             #import pdb; pdb.set_trace()
             self.traffic.iloc[p,queueloc] = len(self.pipeline_model.queue)
-            self.traffic.iloc[p,cost] = self.pipeline_model.hourcost
-            self.traffic.iloc[p,cumu_cost] = self.pipeline_model.cumu_cost
-            self.traffic.iloc[p,cost_per_rec] = self.pipeline_model.hourcost / self.pipeline_model.throughput_rph
+            self.traffic.iloc[p,pipeline_cost] = self.pipeline_model.hourcost
+            self.traffic.iloc[p,cumu_pipeline_cost] = self.pipeline_model.cumu_pipeline_cost
+            self.traffic.iloc[p,pipeline_cost_per_rec] = self.pipeline_model.hourcost / self.pipeline_model.throughput_rph
             #self.traffic.iloc[p,scaleout] = self.pipeline_model.numproc
             
     def sla_check(self, sla):

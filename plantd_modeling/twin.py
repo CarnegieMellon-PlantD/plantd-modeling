@@ -40,7 +40,7 @@ class SimpleSchemaAwareModel(PipelineModel):
         self.queue = []   # List of (task, timestamps) tuples
         self.time = 0   # current hour of year simulation (int)
         self.time_done = 0.0  # Exact time in detailed simulation (float)
-        self.cumu_cost = 0.0
+        self.cumu_pipeline_cost = 0.0
     
     def input(self, detailed_traffic_this_hour): 
         #print(f"SimpleSchemaAwareModel.input: {detailed_traffic_this_hour}")
@@ -77,7 +77,7 @@ class SimpleSchemaAwareModel(PipelineModel):
        
         #self.latency_lifo = self.avg_latency_s + self.queue_worstcase_age_s
         self.hourcost = self.per_vm_hourcost
-        self.cumu_cost = self.cumu_cost + self.hourcost
+        self.cumu_pipeline_cost = self.cumu_pipeline_cost + self.hourcost
 
 
 # FUTURE WORK:
@@ -118,7 +118,7 @@ class SimpleModel(PipelineModel):
         #self.upq = []
         #self.dnq = []
         #self.numproc = 1
-        self.cumu_cost = 0.0
+        self.cumu_pipeline_cost = 0.0
         self.queue = 0
         self.queue_worstcase_age_s = 0
         self.throughput_rph = 0
@@ -137,7 +137,7 @@ class SimpleModel(PipelineModel):
             self.queue_worstcase_age_s = 0
         self.latency_lifo = self.avg_latency_s + self.queue_worstcase_age_s
         self.hourcost = self.per_vm_hourcost
-        self.cumu_cost = self.cumu_cost + self.hourcost
+        self.cumu_pipeline_cost = self.cumu_pipeline_cost + self.hourcost
         
         
 """        
@@ -178,7 +178,7 @@ class QuickscalingModel(PipelineModel):
 
     def reset(self):
         self.numproc = 1
-        self.cumu_cost = 0.0
+        self.cumu_pipeline_cost = 0.0
         self.queue = 0
         self.queue_worstcase_age_s = 0
         self.throughput_rph = 0
@@ -198,7 +198,7 @@ class QuickscalingModel(PipelineModel):
             self.queue_worstcase_age_s = 0
         self.latency_lifo_s = self.basemodel.avg_latency_s + self.queue_worstcase_age_s
         self.hourcost = self.fixed_hourcost + self.basemodel.per_vm_hourcost * self.numproc
-        self.cumu_cost = self.cumu_cost + self.hourcost  
+        self.cumu_pipeline_cost = self.cumu_pipeline_cost + self.hourcost  
 
 @dataclass    
 class AutoscalingModel(PipelineModel):
@@ -239,7 +239,7 @@ class AutoscalingModel(PipelineModel):
         self.upq_rph = []      # recs per hour processed for last upDelay_h hours
         self.dnq_rph = []      # recs per hour processed for last dnDelay_h hours
         self.numproc = 1
-        self.cumu_cost = 0.0
+        self.cumu_pipeline_cost = 0.0
         self.queue = 0
         self.queue_worstcase_age_s = 0
         self.throughput_rph = 0
@@ -259,7 +259,7 @@ class AutoscalingModel(PipelineModel):
             self.queue_worstcase_age_s = 0
         self.latency_lifo_s = self.basemodel.avg_latency_s + self.queue_worstcase_age_s
         self.hourcost = self.fixed_hourcost + self.basemodel.per_vm_hourcost * self.numproc
-        self.cumu_cost = self.cumu_cost + self.hourcost  
+        self.cumu_pipeline_cost = self.cumu_pipeline_cost + self.hourcost  
         self.scale()
         
     def scale(self):
@@ -300,7 +300,7 @@ class AutoscalingModelFine(PipelineModel):
         self.upq_s = []
         self.dnq_s = []
         self.numproc = 1
-        self.cumu_cost = 0.0
+        self.cumu_pipeline_cost = 0.0
         self.queue = 0
         self.queue_worstcase_age_s = 0
         self.throughput_rph = 0
@@ -331,7 +331,7 @@ class AutoscalingModelFine(PipelineModel):
             self.latency_lifo_s = self.basemodel.avg_latency_s + self.queue_worstcase_age_s
             self.hourcost += (self.fixed_hourcost/3600.0 + self.basemodel.per_vm_hourcost/3600.0 * self.numproc)
             self.scale()
-        self.cumu_cost += self.hourcost
+        self.cumu_pipeline_cost += self.hourcost
         
         
     def scale(self):
@@ -363,18 +363,18 @@ def simulate(twin, traffic):
     thru = traffic.calculate_throughput(twin)
     queue = traffic.calculate_queue(twin)
 
-    #traffic.traffic.to_csv(f"fakeredis/simulation_{sim_name}.csv")
     metrics.redis.save_str("simulation_traffic", sim_name, traffic.traffic.to_csv(index=True))
     
+    # TO DO: add SLA checks to the kubernetes objects, so they can be checked here.
+    # This sample code does the check, but it's not configurable by the user.
     sla_check = traffic.sla_check({"latency_sla_percent": 99.0, "latency_sla_limit": 70.0})
 
 
     metrics.redis.save_str("simulation_summary", sim_name, 
-        json.dumps({"total_cost": float(traffic.traffic.cost.sum()), "avg_latency_s": float(traffic.traffic.latency_fifo.mean()),
+        json.dumps({"total_pipeline_cost": float(traffic.traffic.pipeline_cost.sum()), "avg_latency_s": float(traffic.traffic.latency_fifo.mean()),
                "max_latency_s": float(traffic.traffic.latency_fifo.max()), "avg_queue": float(traffic.traffic.queue_len.mean()),
                "max_queue": float(traffic.traffic.queue_len.max()), "avg_throughput_rph": float(traffic.traffic.throughput.mean()),
-                "max_throughput_rph": float(traffic.traffic.throughput.max()),
-                "sla_check": sla_check}))
+                "max_throughput_rph": float(traffic.traffic.throughput.max())}))
     return twin
 
 

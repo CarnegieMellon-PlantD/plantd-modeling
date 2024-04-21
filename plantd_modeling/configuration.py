@@ -73,20 +73,34 @@ class NetCost:
         return nc
     
     def apply(self, traffic_model):
-        if "bandwidth_min" in traffic_model.traffic.columns:
-            self.monthly_totals = traffic_model.traffic.groupby(["Year","Month"])[["bandwidth_min","bandwidth_max"]].sum()
+        if "bandwidth" not in traffic_model.traffic.columns:
+            # If data size becomes available, calculate bandwidth from it
+            # DATA_SIZE = 1kb
+            # self.monthly_totals = traffic_model.traffic.groupby(["Year","Month"])[["hourly"]].sum()
+            # self.monthly_totals["bandwidth"] = self.monthly_totals["hourly"] * DATA_SIZE
+            raise Exception("Traffic model must include data bandwidth information to calculate network costs")
+
+        traffic_model.traffic["hourly_network_cost"] = traffic_model.traffic["bandwidth"] * self.net_cost_per_mb 
+        HOURS_IN_AVG_MONTH = int(365*24/12.0)
+        cumulative_bandwidth_over_span = traffic_model.traffic["bandwidth"].rolling(window=self.raw_data_retention_policy_months*HOURS_IN_AVG_MONTH).sum()
+        traffic_model.traffic["hourly_raw_data_store_cost"] = cumulative_bandwidth_over_span \
+            * self.raw_data_store_cost_per_mb_month/HOURS_IN_AVG_MONTH 
+
+    def apply_monthly(self, traffic_model):
+        if "bandwidth" in traffic_model.traffic.columns:
+            self.monthly_totals = traffic_model.traffic.groupby(["Year","Month"])[["bandwidth"]].sum()
         else:
-            self.monthly_totals = traffic_model.traffic.groupby(["Year","Month"])[["hourly"]].sum()
-            self.monthly_totals.columns = ["bandwidth_min"]
-            self.monthly_totals["bandwidth_max"] = self.monthly_totals["bandwidth_min"]
+            # If data size becomes available, calculate bandwidth from it
+            # DATA_SIZE = 1kb
+            # self.monthly_totals = traffic_model.traffic.groupby(["Year","Month"])[["hourly"]].sum()
+            # self.monthly_totals["bandwidth"] = self.monthly_totals["hourly"] * DATA_SIZE
+            raise Exception("Traffic model must include data bandwidth information to calculate network costs")
+        
             
-        self.monthly_totals["net_cost_per_month_min"] = self.monthly_totals["bandwidth_min"] / 1024000.0 * self.net_cost_per_mb
-        self.monthly_totals["net_cost_per_month_max"] = self.monthly_totals["bandwidth_max"] / 1024000.0 * self.net_cost_per_mb
-        self.monthly_totals["raw_data_store_cost_per_month_min"] = self.monthly_totals["bandwidth_min"] / 1024000.0 \
+        self.monthly_totals["net_cost_per_month"] = self.monthly_totals["bandwidth"] / 1024000.0 * self.net_cost_per_mb
+        self.monthly_totals["raw_data_store_cost_per_month"] = self.monthly_totals["bandwidth"] / 1024000.0 \
             * self.processed_data_store_cost_per_mb_month * self.processed_data_retention_policy_months
-        self.monthly_totals["raw_data_store_cost_per_month_max"] = self.monthly_totals["bandwidth_max"] / 1024000.0 \
-            * self.processed_data_store_cost_per_mb_month * self.processed_data_retention_policy_months
-        self.monthly_totals["cloud_processing_cost"] = 0
+        self.monthly_totals["cloud_processing_cost_per_month"] = 0
 
     def serialize_monthly_totals(self):
         return self.monthly_totals.reset_index().to_csv()

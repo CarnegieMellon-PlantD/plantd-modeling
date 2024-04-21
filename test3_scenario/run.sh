@@ -31,7 +31,7 @@ fi
 export SCENARIO_NAME="test-pipeline.test3-scenario"
 export SCENARIO="`cat test3_scenario/scenario.json`"
 export NETCOST_NAME="test-pipeline.test3-netcost"
-export NETCOST="`cat test3_scenario/netcost.json`"
+export NETCOSTS="`cat test3_scenario/netcost.json`"
 export MODEL_TYPE="simple"
 export DIGITAL_TWIN_TYPE="schemaaware"
 export DATASET_JSON="`cat test3_scenario/datasets.json`"
