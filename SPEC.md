@@ -30,6 +30,11 @@ EXPERIMENT ENDED AT  2024-04-21T06:34:26.673000+00:00
 
 when the end is detected.
 
+### To test locally
+- port forward prometheus to local 9090
+- Run an experiment by hand on the cluster
+- after the experiment starts running, `kubectl get experiment -A -o json > test4_end_detect/experiments.json`
+- edit test4_end_detect/run.sh to change the experiment name and namespace to
 
 ## python main.py sim_all
 
