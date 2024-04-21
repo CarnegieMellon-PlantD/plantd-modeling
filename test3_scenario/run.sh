@@ -1,17 +1,9 @@
 
-# if false; then...
+# Setup for local testing -- (disabled)
 if false; then
-    aws eks --region us-east-1 update-kubeconfig --name windtunnel-eks-GU7jql7j
-    kubectl proxy &
-    kubectl port-forward -n plantd-operator-system svc/plantd-studio-service 3000:80   &
-    kubectl port-forward -n plantd-operator-system pod/opencost-757d5b9c8-7fvtq 9003  &
-    kubectl port-forward -n plantd-operator-system pod/prometheus-prometheus-0 9090:9090 &
-        # plantd-thanos-querier, plantd-opencost, plantd-redis
-
     kubectl port-forward -n plantd-operator-system svc/plantd-thanos-querier 9090:9090 &
     kubectl port-forward -n plantd-operator-system svc/plantd-opencost 9003:9003 &
     kubectl port-forward -n plantd-operator-system svc/plantd-redis 6377:6379 &
-
 fi
 
 export REDIS_HOST="localhost"
@@ -70,7 +62,9 @@ echo "plantd:simulation_traffic:test-pipeline.test3-sim:" `redis-cli get plantd:
 echo "plantd:simulation_summary:test-pipeline.test3-sim:" `redis-cli get plantd:simulation_summary:test-pipeline.test3-sim | wc -l`
 
 
-# Note: writes to these REDIS keys:
+# Note: writes to these REDIS keys
+
+# TODO: fix these names; they're out of date, but the information is correct
 
 #
 # These are outputs the system will need to read.  In testing, it's useful to delete these
@@ -101,7 +95,7 @@ echo "plantd:simulation_summary:test-pipeline.test3-sim:" `redis-cli get plantd:
 #   plantd:cache:prometheus_cost_data:node_cpu_hourly_cost
 #   plantd:cache:prometheus_cost_data:node_ram_hourly_cost
 #       - cache of raw prometheus result, used for running offline
-#   plantd:cache:experiment_cr:test3.sample-experiment
+#   plantd:cache:experiment_cr:test-pipeline.sample-experiment
 #       - cache of the experiment CR's JSON dump, used for running offline
 #   plantd:cache:experiment_loadpatterns:test3.sample-experiment
 #       - cache of the load patterns used in the experiment, used for running offline
