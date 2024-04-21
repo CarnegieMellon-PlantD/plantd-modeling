@@ -40,11 +40,11 @@ export SCENARIO_NAME=
 export NETCOST_NAME=
 export MODEL_TYPE="simple"
 export DIGITAL_TWIN_TYPE="regular"
-export DATASET_METADATA="`cat test1_simple/dataset.json`"
+export DATASET_JSON="`cat test1_simple/dataset.json`"
 export EXPERIMENT_NAMES=test-pipeline.test1-experiment
-export EXPERIMENT_METADATA="`cat test1_simple/experiment.json`"
+export EXPERIMENT_JSON="`cat test1_simple/experiment.json`"
 export LOAD_PATTERN_NAMES=test-pipeline.test1-loadpattern
-export LOAD_PATTERN_METADATA="`cat test1_simple/loadpattern.json`"
+export LOAD_PATTERN_JSON="`cat test1_simple/loadpattern.json`"
 source test1_simple/traffic-model-nominal.env
 export TWIN_NAME="test-pipeline.test1-twin"
 export SIM_NAME="test-pipeline.test1-sim"

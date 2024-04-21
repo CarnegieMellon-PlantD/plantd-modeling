@@ -6,6 +6,7 @@ import json
 import pandas as pd
 import redis
 import os
+import time
 import io
 
 class PrometheusAgedOutException(Exception):
@@ -40,13 +41,84 @@ redis_password = os.environ.get("REDIS_PASSWORD", None)
 redis_host = os.environ.get("REDIS_HOST", None)
 redis_port = os.environ.get("REDIS_PORT", None)
 
-redis = Redis(redis_host, redis_port, redis_password)    
+try:
+    redis = Redis(redis_host, redis_port, redis_password)    
+except Exception as e:
+    print(f"Not connecting to redis: {e}")
+    redis = None
 
 class Metrics:
     def __init__(self, prometheus_host) -> None:
         self.prometheus_host = prometheus_host
         
+    def end_detector_simplified(self, experiment, query_window, debounce_period, pod_detatch_adjustment):
+        # Query over last debounce period.  If it's zero over > 1/2 of the time, we're done
+        # calculate end time, add pod_detatch_adjustment, and wait until then to quit
+        url = f"{self.prometheus_host}/api/v1/query_range"
+        step_interval = 30
 
+        # start_ts = now minus debounce_period
+        start_ts = datetime.now().timestamp() - query_window
+        end_ts = datetime.now().timestamp()
+
+        #
+        query = REALTIME_THROUGHPUT_QUERY.format(params=experiment, step=step_interval)
+        
+        response = requests.get(url, params={'query': query, 'start': start_ts, 'end': end_ts, 'step': step_interval}, 
+            #auth=('prometheus', prometheus_password), 
+            verify=False, stream=False)
+
+        response.raise_for_status()
+        if len(response.json()['data']['result']) == 0:
+            #raise PrometheusAgedOutException(f"No data found for {experiment.experiment_name}")
+            return {
+                    "transition_time": start_ts,
+                    "transition_direction": "downwards"
+                }
+        
+        rows = []
+        timestamp = None
+
+        for result in response.json()['data']['result']:
+            span_name = result['metric']['span_name']
+            for value in result['values']:
+                timestamp = pd.to_datetime(value[0], unit='s')  # Convert UNIX timestamp to datetime
+                rows.append({
+                    'time': timestamp,
+                    'span_name': span_name,
+                    'value': float(value[1])  # Convert value to float
+                })
+
+        # Create DataFrame
+        df = pd.DataFrame(rows)
+
+        # Pivot DataFrame to get desired format
+        df_pivot = df.pivot(index='time', columns='span_name', values='value')
+        df_pivot.reset_index(inplace=True)
+        df_pivot.columns.name = None  # Remove the hierarchy on the columns
+        
+
+        df = df_pivot
+        phase_columns = [c for c in df.columns if c.endswith("_phase")]
+        df["aggregate_activity"] = 0
+
+        for pc in phase_columns:
+            df["aggregate_activity"] += df[pc].fillna(0)
+
+        # last nonzero row in df["aggregate_activity"]
+        last_non_zero_index = df["aggregate_activity"].astype(bool)[::-1].idxmax()
+        last_non_zero_time = df.loc[last_non_zero_index, 'time']
+        if last_non_zero_time.timestamp() <= time.time()-debounce_period:
+            return {
+                    "transition_time": last_non_zero_time.timestamp(),
+                    "transition_direction": "downwards"
+                }
+        
+        else:
+            return {
+                    "activity_level": df["aggregate_activity"].mean(),
+                    "transition_direction": "continuing"
+                }
     def get_stages_levels(self, experiment, duration_s, threshold, before_start = None):
         """
         Get the averaged rps levels for all pipeline stages
@@ -64,7 +136,7 @@ class Metrics:
             start_ts = experiment.start_time.timestamp() - before_start
         end_ts = start_ts + duration_s
         #
-        query = REALTIME_THROUGHPUT_QUERY.format(params=experiment.experiment_name, step=step_interval)
+        query = REALTIME_THROUGHPUT_QUERY.format(params=experiment, step=step_interval)
         print(query, datetime.utcfromtimestamp(start_ts), datetime.utcfromtimestamp(end_ts), step_interval)
         print(url)  
         print(query)
@@ -74,10 +146,15 @@ class Metrics:
 
         response.raise_for_status()
         if len(response.json()['data']['result']) == 0:
-            raise PrometheusAgedOutException(f"No data found for {experiment.experiment_name}")
+            #raise PrometheusAgedOutException(f"No data found for {experiment.experiment_name}")
+            return {
+                    "transition_time": start_ts,
+                    "transition_direction": "downwards"
+                }
 
         df = pd.read_csv(io.StringIO(response.text))
         phase_columns = [c for c in df.columns if c.endswith("_phase")]
+        df["aggregate_activity"] = 0
         for pc in phase_columns:
             df["aggregate_activity"] += df[pc]
         df['above_threshold'] = df['aggregate_activity'] > threshold
@@ -146,7 +223,7 @@ class Metrics:
         step_interval = max(30, int((end_ts - start_ts) / 11000))
         #
 
-        query = REALTIME_THROUGHPUT_QUERY.format(params=experiment.experiment_name, step=step_interval)
+        query = REALTIME_THROUGHPUT_QUERY.format(params=experiment.experiment, step=step_interval)
         print(query, datetime.utcfromtimestamp(start_ts), datetime.utcfromtimestamp(end_ts), step_interval)
         print(url)  
         print(query)
@@ -199,7 +276,7 @@ class Metrics:
             start_ts = experiment.start_time.timestamp() #- step_interval*15
             step_interval = max(30, int((end_ts - start_ts) / 11000))
 
-            query = REALTIME_THROUGHPUT_QUERY.format(params=experiment.experiment_name, step=step_interval)
+            query = REALTIME_THROUGHPUT_QUERY.format(params=experiment.experiment, step=step_interval)
             print(query, datetime.utcfromtimestamp(start_ts), datetime.utcfromtimestamp(end_ts), step_interval)
             print(url)  
             print(query)

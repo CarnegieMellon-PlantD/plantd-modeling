@@ -336,10 +336,10 @@ class ConfigurationConnectionEnvVars:
         self.load_patterns = {}
         self.datasets = {}
         experiment_names = os.environ["EXPERIMENT_NAMES"].split(",")
-        load_pattern_names = os.environ["LOAD_PATTERN_NAMES"].split(",")
-        exp_raw = json.loads(os.environ[f"EXPERIMENT_METADATA"])
-        lp_raw = json.loads(os.environ[f"LOAD_PATTERN_METADATA"])
-        ds_raw = json.loads(os.environ[f"DATASET_METADATA"])
+        #load_pattern_names = os.environ.get("LOAD_PATTERN_NAMES","").split(",")
+        exp_raw = json.loads(os.environ.get("EXPERIMENT_JSON",'{"items":[]}'))
+        lp_raw = json.loads(os.environ.get("LOAD_PATTERN_JSON",'{"items":[]}'))
+        ds_raw = json.loads(os.environ.get("DATASET_JSON",'{"items":[]}'))
         for item in exp_raw["items"]:
             experiment_name = KubernetesName.from_json(item["metadata"])
             if experiment_name.dotted_name not in experiment_names: 
@@ -352,7 +352,10 @@ class ConfigurationConnectionEnvVars:
             dataset_name = KubernetesName.from_json(item["metadata"])
             self.datasets[dataset_name] = Dataset(item)
         for exp in self.experiments.values():
-            exp.load_patterns = {k:self.load_patterns[v] for k,v in exp.load_pattern_names.items()}
+            try:
+                exp.load_patterns = {k:self.load_patterns[v] for k,v in exp.load_pattern_names.items()}
+            except  KeyError as ke:
+                print(f"Not reading load patterns of {exp.experiment_name}: {ke}")
             #exp.pipeline = self.get_pipeline_metadata(exp.pipeline_name)
         self.scenario = None
         self.netcosts = None

@@ -42,11 +42,11 @@ export NETCOST_NAME="test-pipeline.test3-netcost"
 export NETCOST="`cat test3_scenario/netcost.json`"
 export MODEL_TYPE="simple"
 export DIGITAL_TWIN_TYPE="schemaaware"
-export DATASET_METADATA="`cat test3_scenario/datasets.json`"
+export DATASET_JSON="`cat test3_scenario/datasets.json`"
 export EXPERIMENT_NAMES=test-pipeline.test3p-experiment,test-pipeline.test3s-experiment,test-pipeline.test3w-experiment
-export EXPERIMENT_METADATA="`cat test3_scenario/experiment.json`"
+export EXPERIMENT_JSON="`cat test3_scenario/experiment.json`"
 export LOAD_PATTERN_NAMES=test-pipeline.test3-loadpattern
-export LOAD_PATTERN_METADATA="`cat test3_scenario/loadpattern.json`"
+export LOAD_PATTERN_JSON="`cat test3_scenario/loadpattern.json`"
 source test3_scenario/traffic-model-nominal.env
 export TWIN_NAME="test-pipeline.test3-twin"
 export SIM_NAME="test-pipeline.test3-sim"

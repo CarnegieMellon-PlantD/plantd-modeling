@@ -90,6 +90,7 @@ def get_cost_data(opencost_endpoint, pipeline_label_keys, pipeline_label_values,
     
     print("Calling: ", opencost_endpoint, " with params: ", params)
 
+    #import pdb; pdb.set_trace()
     # make API request
     if os.environ.get("FROM_CACHED","") == "from_cached":
         response = metrics.redis.load_str("cache:opencost_data", repr(params))
