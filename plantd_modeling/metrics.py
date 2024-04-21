@@ -223,7 +223,7 @@ class Metrics:
         step_interval = max(30, int((end_ts - start_ts) / 11000))
         #
 
-        query = REALTIME_THROUGHPUT_QUERY.format(params=experiment.experiment, step=step_interval)
+        query = REALTIME_THROUGHPUT_QUERY.format(params=experiment.experiment_name, step=step_interval)
         print(query, datetime.utcfromtimestamp(start_ts), datetime.utcfromtimestamp(end_ts), step_interval)
         print(url)  
         print(query)
@@ -276,7 +276,7 @@ class Metrics:
             start_ts = experiment.start_time.timestamp() #- step_interval*15
             step_interval = max(30, int((end_ts - start_ts) / 11000))
 
-            query = REALTIME_THROUGHPUT_QUERY.format(params=experiment.experiment, step=step_interval)
+            query = REALTIME_THROUGHPUT_QUERY.format(params=experiment.experiment_name, step=step_interval)
             print(query, datetime.utcfromtimestamp(start_ts), datetime.utcfromtimestamp(end_ts), step_interval)
             print(url)  
             print(query)

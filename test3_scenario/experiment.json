@@ -5,15 +5,15 @@
             "apiVersion": "windtunnel.plantd.org/v1alpha1",
             "kind": "Experiment",
             "metadata": {
-                "creationTimestamp": "2024-04-20T20:00:48Z",
+                "creationTimestamp": "2024-04-21T04:40:35Z",
                 "finalizers": [
                     "experiment.windtunnel.plantd.org/finalizer"
                 ],
                 "generation": 2,
                 "name": "test1-experiment",
                 "namespace": "test-pipeline",
-                "resourceVersion": "133423479",
-                "uid": "cf66ad60-6ccd-4b2e-9cfe-f4b29284e762"
+                "resourceVersion": "133574895",
+                "uid": "625995a2-70ff-4530-b7fc-1bd5023d7310"
             },
             "spec": {
                 "drainingTime": "10m0s",
@@ -38,14 +38,14 @@
             },
             "status": {
                 "cloudProvider": "aws",
-                "completionTime": "2024-04-20T20:21:24Z",
-                "drainingStartTime": "2024-04-20T20:11:24Z",
+                "completionTime": "2024-04-21T05:01:21Z",
+                "drainingStartTime": "2024-04-21T04:51:21Z",
                 "durations": {
                     "upload": "10m0s"
                 },
                 "enableCostCalculation": true,
                 "jobStatus": "Completed",
-                "startTime": "2024-04-20T20:01:03Z",
+                "startTime": "2024-04-21T04:40:55Z",
                 "tags": {
                     "pipeline-infrastructure": "testpipeline"
                 }
@@ -55,15 +55,15 @@
             "apiVersion": "windtunnel.plantd.org/v1alpha1",
             "kind": "Experiment",
             "metadata": {
-                "creationTimestamp": "2024-04-20T21:39:35Z",
+                "creationTimestamp": "2024-04-21T05:28:43Z",
                 "finalizers": [
                     "experiment.windtunnel.plantd.org/finalizer"
                 ],
                 "generation": 2,
                 "name": "test3p-experiment",
                 "namespace": "test-pipeline",
-                "resourceVersion": "133451015",
-                "uid": "93ef5bd5-c444-42c9-8868-61624a8d2218"
+                "resourceVersion": "133587515",
+                "uid": "3875bc4e-666b-41f7-a887-eb9d17d1c951"
             },
             "spec": {
                 "drainingTime": "10m0s",
@@ -88,14 +88,14 @@
             },
             "status": {
                 "cloudProvider": "aws",
-                "completionTime": "2024-04-20T21:55:21Z",
-                "drainingStartTime": "2024-04-20T21:45:21Z",
+                "completionTime": "2024-04-21T05:44:24Z",
+                "drainingStartTime": "2024-04-21T05:34:24Z",
                 "durations": {
                     "upload": "5m0s"
                 },
                 "enableCostCalculation": true,
                 "jobStatus": "Completed",
-                "startTime": "2024-04-20T21:39:55Z",
+                "startTime": "2024-04-21T05:29:03Z",
                 "tags": {
                     "pipeline-infrastructure": "testpipeline"
                 }
@@ -105,15 +105,15 @@
             "apiVersion": "windtunnel.plantd.org/v1alpha1",
             "kind": "Experiment",
             "metadata": {
-                "creationTimestamp": "2024-04-20T21:58:56Z",
+                "creationTimestamp": "2024-04-21T05:56:17Z",
                 "finalizers": [
                     "experiment.windtunnel.plantd.org/finalizer"
                 ],
                 "generation": 2,
                 "name": "test3s-experiment",
                 "namespace": "test-pipeline",
-                "resourceVersion": "133456753",
-                "uid": "4a52f81b-a534-412c-8d8e-9943ef7cddcb"
+                "resourceVersion": "133595656",
+                "uid": "e51e7631-befd-40d6-9aed-caea799a264d"
             },
             "spec": {
                 "drainingTime": "10m0s",
@@ -138,14 +138,14 @@
             },
             "status": {
                 "cloudProvider": "aws",
-                "completionTime": "2024-04-20T22:14:37Z",
-                "drainingStartTime": "2024-04-20T22:04:37Z",
+                "completionTime": "2024-04-21T06:11:57Z",
+                "drainingStartTime": "2024-04-21T06:01:57Z",
                 "durations": {
                     "upload": "5m0s"
                 },
                 "enableCostCalculation": true,
                 "jobStatus": "Completed",
-                "startTime": "2024-04-20T21:59:11Z",
+                "startTime": "2024-04-21T05:56:37Z",
                 "tags": {
                     "pipeline-infrastructure": "testpipeline"
                 }
@@ -155,15 +155,15 @@
             "apiVersion": "windtunnel.plantd.org/v1alpha1",
             "kind": "Experiment",
             "metadata": {
-                "creationTimestamp": "2024-04-20T22:18:34Z",
+                "creationTimestamp": "2024-04-21T06:18:48Z",
                 "finalizers": [
                     "experiment.windtunnel.plantd.org/finalizer"
                 ],
                 "generation": 2,
                 "name": "test3w-experiment",
                 "namespace": "test-pipeline",
-                "resourceVersion": "133462629",
-                "uid": "422a6740-de27-4c4b-b56e-c95abf279b0a"
+                "resourceVersion": "133602343",
+                "uid": "7ae93e9e-8199-45d6-9377-d37e16643c19"
             },
             "spec": {
                 "drainingTime": "10m0s",
@@ -188,14 +188,14 @@
             },
             "status": {
                 "cloudProvider": "aws",
-                "completionTime": "2024-04-20T22:34:20Z",
-                "drainingStartTime": "2024-04-20T22:24:20Z",
+                "completionTime": "2024-04-21T06:34:29Z",
+                "drainingStartTime": "2024-04-21T06:24:29Z",
                 "durations": {
                     "upload": "5m0s"
                 },
                 "enableCostCalculation": true,
                 "jobStatus": "Completed",
-                "startTime": "2024-04-20T22:18:49Z",
+                "startTime": "2024-04-21T06:19:08Z",
                 "tags": {
                     "pipeline-infrastructure": "testpipeline"
                 }

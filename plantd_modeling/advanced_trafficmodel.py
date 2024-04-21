@@ -198,6 +198,7 @@ class AdvancedTrafficModel(dict):
         self.traffic["latency_fifo"] = 0
         self.traffic["cost_per_rec"] = 0.0
         self.traffic["cost"] = 0
+        self.traffic["cumu_cost"] = 0
         self.traffic["scaleout"] = 0
         queue = 0
         queue_worstcase_age_s = 0
@@ -208,6 +209,7 @@ class AdvancedTrafficModel(dict):
         latency_lifo = self.traffic.columns.get_loc("latency_lifo")
         cost_per_rec = self.traffic.columns.get_loc("cost_per_rec")
         cost = self.traffic.columns.get_loc("cost")
+        cumu_cost = self.traffic.columns.get_loc("cumu_cost")
         scaleout = self.traffic.columns.get_loc("scaleout")
         self.pipeline_model.reset()
         for p in range(len(self.traffic.throughput)):
@@ -217,11 +219,13 @@ class AdvancedTrafficModel(dict):
             self.pipeline_model.input(self.traffic[self.task_rph_set].iloc[p].to_dict()) 
             self.traffic.iloc[p,thruloc] = self.pipeline_model.throughput_rph
             self.traffic.iloc[p,latency_fifo] = self.pipeline_model.latency_fifo_s
-            self.traffic.iloc[p,latency_lifo] = self.pipeline_model.latency_lifo_s
-            self.traffic.iloc[p,queueloc] = self.pipeline_model.queue
+            #self.traffic.iloc[p,latency_lifo] = self.pipeline_model.latency_lifo_s
+            #import pdb; pdb.set_trace()
+            self.traffic.iloc[p,queueloc] = len(self.pipeline_model.queue)
             self.traffic.iloc[p,cost] = self.pipeline_model.hourcost
+            self.traffic.iloc[p,cumu_cost] = self.pipeline_model.cumu_cost
             self.traffic.iloc[p,cost_per_rec] = self.pipeline_model.hourcost / self.pipeline_model.throughput_rph
-            self.traffic.iloc[p,scaleout] = self.pipeline_model.numproc
+            #self.traffic.iloc[p,scaleout] = self.pipeline_model.numproc
             
     def sla_check(self, sla):
         if not hasattr(self, "pipeline_model"):

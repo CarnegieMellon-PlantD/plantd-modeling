@@ -24,8 +24,8 @@ export OPENCOST_ENDPOINT="http://localhost:9003/allocation"
 export PIPELINE_LABEL_KEYS=pipeline-infrastructure
 export PIPELINE_LABEL_VALUES=testpipeline
 
-export FROM_CACHED="from_cached"
-#export FROM_CACHED=
+#export FROM_CACHED="from_cached"
+export FROM_CACHED=
 
 # if not cached, then load test3_scenario/experiment.json with real data from k8s
 # if cached, then load test3_scenario/experiment.json with fake data
