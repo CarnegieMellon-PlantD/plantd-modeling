@@ -249,13 +249,22 @@ class AdvancedTrafficModel(dict):
         self.calculate()
         return self.traffic.queue_len
         
-def forecast(year, scenario, min_or_max="max"):
+def forecast(year, scenario, min_or_max="max",  from_cached=False):
     
     traffic_model_name = os.environ['TRAFFIC_MODEL_NAME']
+    traffic_model = os.environ['TRAFFIC_MODEL']
     
     config = configuration.ConfigurationConnectionEnvVars()
+
+    # if we're working from cache
+    if from_cached:
+        model = AdvancedTrafficModel.deserialize_parameters(metrics.redis.load_str("trafficmodel_params", traffic_model_name))
+    else:
+        model = AdvancedTrafficModel.deserialize_parameters(traffic_model)
+        metrics.redis.save_str("trafficmodel_params", traffic_model_name, model.serialize_parameters())
+
     #model = TrafficModel.deserialize_parameters_from_file(open(f"fakeredis/trafficmodel_{traffic_model_name}.json").read())
-    model = AdvancedTrafficModel.deserialize_parameters(metrics.redis.load_str("trafficmodel_params", traffic_model_name))
+    #model = AdvancedTrafficModel.deserialize_parameters(metrics.redis.load_str("trafficmodel_params", traffic_model_name))
 
 
     model.generate_traffic(datetime(year,1,1), datetime(year,12,31), scenario, min_or_max)
