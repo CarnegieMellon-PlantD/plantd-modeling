@@ -376,7 +376,11 @@ def simulate(twin, traffic):
               "max_queue": float(traffic.traffic.queue_len.max()), 
               "avg_throughput_rph": float(traffic.traffic.throughput.mean()),
               "max_throughput_rph": float(traffic.traffic.throughput.max())}
-
+    if "hourly_network_cost" in traffic.traffic.columns:
+        totals["network_cost"] = float(traffic.traffic.hourly_network_cost.sum())
+        totals["storage_cost"] = float(traffic.traffic.hourly_raw_data_store_cost.sum())
+        totals["pipeline_cost"] = float(traffic.traffic.pipeline_cost.sum())
+        totals["total_cost"] = totals["network_cost"] + totals["storage_cost"] + totals["pipeline_cost"]
     metrics.redis.save_str("simulation_summary", sim_name, 
         json.dumps(totals))
     return twin
