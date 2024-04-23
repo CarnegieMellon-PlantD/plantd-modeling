@@ -377,6 +377,7 @@ class ConfigurationConnectionEnvVars:
             self.scenario = Scenario.deserialize(os.environ["SCENARIO"])
         if "NETCOSTS" in os.environ:
             self.netcosts = NetCost(json.loads(os.environ["NETCOSTS"]))
+        print(f"environ keys are {[(k, len(os.environ[k])) for k in os.environ.keys() if k[0] in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ']}")
         
     def get_experiment_metadata(self):
         return self.experiments
