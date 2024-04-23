@@ -369,12 +369,16 @@ def simulate(twin, traffic):
     # This sample code does the check, but it's not configurable by the user.
     sla_check = traffic.sla_check({"latency_sla_percent": 99.0, "latency_sla_limit": 70.0})
 
+    totals = {"total_pipeline_cost": float(traffic.traffic.pipeline_cost.sum()), 
+              "avg_latency_s": float(traffic.traffic.latency_fifo.mean()),
+              "max_latency_s": float(traffic.traffic.latency_fifo.max()), 
+              "avg_queue": float(traffic.traffic.queue_len.mean()),
+              "max_queue": float(traffic.traffic.queue_len.max()), 
+              "avg_throughput_rph": float(traffic.traffic.throughput.mean()),
+              "max_throughput_rph": float(traffic.traffic.throughput.max())}
 
     metrics.redis.save_str("simulation_summary", sim_name, 
-        json.dumps({"total_pipeline_cost": float(traffic.traffic.pipeline_cost.sum()), "avg_latency_s": float(traffic.traffic.latency_fifo.mean()),
-               "max_latency_s": float(traffic.traffic.latency_fifo.max()), "avg_queue": float(traffic.traffic.queue_len.mean()),
-               "max_queue": float(traffic.traffic.queue_len.max()), "avg_throughput_rph": float(traffic.traffic.throughput.mean()),
-                "max_throughput_rph": float(traffic.traffic.throughput.max())}))
+        json.dumps(totals))
     return twin
 
 

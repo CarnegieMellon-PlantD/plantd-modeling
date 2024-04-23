@@ -126,9 +126,12 @@ class AdvancedTrafficModel(dict):
         self.traffic["base_recs"] = self["start_row_cnt"]
 
         # Note: ignores the base rate and growth rate; these are inferred from the scenario now
-        self.traffic["monthly"] = adjust_by_matching_index(self.traffic["base_recs"]/self.traffic["base_recs"],  self["corrections_monthly"])
+        # Also ignores the monthly variation, since the scenario controls this as well
+        # We only use daily variation to tweak what the scenario specifies
+        self.traffic["monthly"] = self.traffic["base_recs"]
+            #adjust_by_matching_index(self.traffic["base_recs"]/self.traffic["base_recs"],  self["corrections_monthly"])
         self.traffic["hourly"] = adjust_by_matching_index(self.traffic["monthly"], self["corrections_hourly"])
-        self.traffic["bandwidth"] = 0
+        self.traffic["bandwidth"] = 0  # 0 for now; we'll add each schema to this
         self.scenario = scenario
         
         for task in scenario.tasks:

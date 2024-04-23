@@ -105,10 +105,11 @@ def get_cost_data(opencost_endpoint, pipeline_label_keys, pipeline_label_values,
     # load required records into dict and return 
     try: 
         # TODO: what if keys and values contain multiple keys (i.e. commas) 
-        if pipeline_label_keys is not None and len(pipeline_label_keys) > 0:
-            response_key = pipeline_namespace + "/" + pipeline_label_values
-        else:
-            response_key = pipeline_namespace
+        #if pipeline_label_keys is not None and len(pipeline_label_keys) > 0:
+        #    response_key = pipeline_namespace + "/" + pipeline_label_values
+        #else:
+        #    response_key = pipeline_namespace
+        response_key = pipeline_namespace.split(".")[0] + "/" # just the pure namespace
         print("Response key: ", response_key)        
 
         pod_records = response.json()['data'][0]
