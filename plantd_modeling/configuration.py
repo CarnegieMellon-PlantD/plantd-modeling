@@ -80,10 +80,10 @@ class NetCost:
             # self.monthly_totals["bandwidth"] = self.monthly_totals["hourly"] * DATA_SIZE
             raise Exception("Traffic model must include data bandwidth information to calculate network costs")
 
-        traffic_model.traffic["hourly_network_cost"] = traffic_model.traffic["bandwidth"] * self.net_cost_per_mb 
+        traffic_model.traffic["hourly_network_cost"] = traffic_model.traffic["bandwidth"] / 1024000.0 * self.net_cost_per_mb 
         HOURS_IN_AVG_MONTH = int(365*24/12.0)
         cumulative_bandwidth_over_span = traffic_model.traffic["bandwidth"].rolling(window=self.raw_data_retention_policy_months*HOURS_IN_AVG_MONTH).sum()
-        traffic_model.traffic["hourly_raw_data_store_cost"] = cumulative_bandwidth_over_span \
+        traffic_model.traffic["hourly_raw_data_store_cost"] = cumulative_bandwidth_over_span / 1024000.0 \
             * self.raw_data_store_cost_per_mb_month/HOURS_IN_AVG_MONTH 
 
     def apply_monthly(self, traffic_model):
