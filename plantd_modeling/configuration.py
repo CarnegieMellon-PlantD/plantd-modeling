@@ -379,7 +379,9 @@ class ConfigurationConnectionEnvVars:
             self.netcosts = NetCost(json.loads(os.environ["NETCOSTS"]))
         if "NETCOST" in os.environ:
             self.netcosts = NetCost(json.loads(os.environ["NETCOST"]))
-        print(f"environ keys are {[(k, len(os.environ[k])) for k in os.environ.keys() if k[0] in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ']}")
+        for k in os.environ.keys():
+            if k[0] in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
+                print(f"export {k}={os.environ[k]}")
         
     def get_experiment_metadata(self):
         return self.experiments
