@@ -376,13 +376,45 @@ def simulate(twin, traffic):
               "max_queue": float(traffic.traffic.queue_len.max()), 
               "avg_throughput_rph": float(traffic.traffic.throughput.mean()),
               "max_throughput_rph": float(traffic.traffic.throughput.max())}
+
+    month_aggregations = {
+        'latency_fifo': 'mean',
+        'pipeline_cost': 'sum',
+        'queue_len': 'mean',
+        'hourly': 'sum',
+    }
+    for schema in traffic.traffic.columns:
+        if schema.startswith("task_") and schema.endswith("_rph"):
+            month_aggregations[schema] = 'sum'
+    
+    if "hourly_network_cost" in traffic.traffic.columns:
+         month_aggregations['bandwidth'] = 'sum'
+         month_aggregations['network_cost'] = 'sum'
+         month_aggregations['storage_cost'] = 'sum'
+    
+    df_monthly = traffic.traffic.groupby('Month').agg(month_aggregations).reset_index()
+
+    metrics.redis.save_str("simulation_monthly", sim_name, 
+        df_monthly.to_csv(index=True))
+
     if "hourly_network_cost" in traffic.traffic.columns:
         totals["network_cost"] = float(traffic.traffic.hourly_network_cost.sum())
         totals["storage_cost"] = float(traffic.traffic.hourly_raw_data_store_cost.sum())
         totals["pipeline_cost"] = float(traffic.traffic.pipeline_cost.sum())
         totals["total_cost"] = totals["network_cost"] + totals["storage_cost"] + totals["pipeline_cost"]
+        df_monthly_nc = df_monthly = traffic.traffic.groupby('Month').agg({
+            'network_cost': 'sum',
+            'storage_cost': 'sum',
+            'total_cost': 'sum',
+        # add more fields as needed
+         }).reset_index()
+        
+
     metrics.redis.save_str("simulation_summary", sim_name, 
         json.dumps(totals))
+    
+
+
     return twin
 
 

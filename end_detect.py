@@ -11,7 +11,7 @@ import pytz
 config = configuration.ConfigurationConnectionEnvVars()
 DEBOUNCE_PERIOD = int(os.environ['DEBOUNCE_PERIOD'])
 QUERY_WINDOW = int(os.environ['QUERY_WINDOW'])
-POD_DETATCH_ADJUSTMENT = int(os.environ['POD_DETATCH_ADJUSTMENT'])
+POD_DETACH_ADJUSTMENT = int(os.environ['POD_DETACH_ADJUSTMENT'])
 experiment = list(config.experiments.keys())[0]   # Should just be one experiment
 prometheus_host = os.environ['PROMETHEUS_HOST']
 prometheus_password = os.environ['PROMETHEUS_PASSWORD']
@@ -20,12 +20,12 @@ prom = metrics.Metrics(prometheus_host)
 while True:
     time.sleep(DEBOUNCE_PERIOD)
     
-    recent_pd = prom.end_detector_simplified(experiment, QUERY_WINDOW, DEBOUNCE_PERIOD, POD_DETATCH_ADJUSTMENT)
+    recent_pd = prom.end_detector_simplified(experiment, QUERY_WINDOW, DEBOUNCE_PERIOD, POD_DETACH_ADJUSTMENT)
     print("Recent activity level: ", recent_pd)
 
     if recent_pd is not None and  recent_pd["transition_direction"] == "downwards":
         now = time.time()
-        wait_time = recent_pd["transition_time"] + POD_DETATCH_ADJUSTMENT - now
+        wait_time = recent_pd["transition_time"] + POD_DETACH_ADJUSTMENT - now
         print("EXPERIMENT ENDED AT ", datetime.datetime.fromtimestamp(recent_pd["transition_time"], tz=pytz.UTC).isoformat() )
         
         if wait_time > 0:

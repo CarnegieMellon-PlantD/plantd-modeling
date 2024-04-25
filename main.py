@@ -129,7 +129,7 @@ elif sys.argv[1] == "simulate":
 elif sys.argv[1] == "end_detect":
     config = configuration.ConfigurationConnectionEnvVars()
     DEBOUNCE_PERIOD = os.environ['DEBOUNCE_PERIOD']
-    POD_DETATCH_ADJUSTMENT = os.environ['POD_DETATCH_ADJUSTMENT']
+    POD_DETACH_ADJUSTMENT = os.environ['POD_DETACH_ADJUSTMENT']
     experiment = list(config.experiments.keys())[0]   # Should just be one experiment
 
     baseline = metrics.get_stages_levels(experiment, DEBOUNCE_PERIOD, before_start = DEBOUNCE_PERIOD*2)
@@ -146,10 +146,10 @@ elif sys.argv[1] == "end_detect":
             crossing_info = metrics.detect_crossing(baseline, recent_pd)
             if crossing_info is not None and  crossing_info["transition_direction"] == "downwards":
                 now = time.time()
-                wait_time = POD_DETATCH_ADJUSTMENT - (now - crossing_info["transition_time"])
+                wait_time = POD_DETACH_ADJUSTMENT - (now - crossing_info["transition_time"])
                 print("PROCESS ENDED AT ", crossing_info["transition_time"], " waiting ", )
                 time.sleep (wait_time)
-                print ('PROCESS STOPPED AT {crossing_info["transition_time"]}; waiting until {POD_DETATCH_ADJUSTMENT - (now - crossing_info["transition_time"])}')
+                print ('PROCESS STOPPED AT {crossing_info["transition_time"]}; waiting until {POD_DETACH_ADJUSTMENT - (now - crossing_info["transition_time"])}')
                 exit()
 elif sys.argv[1] == "test_write":
     exps = build.build_model()
