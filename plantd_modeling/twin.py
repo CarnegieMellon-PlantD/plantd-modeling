@@ -389,10 +389,14 @@ def simulate(twin, traffic):
     
     if "hourly_network_cost" in traffic.traffic.columns:
          month_aggregations['bandwidth'] = 'sum'
-         month_aggregations['network_cost'] = 'sum'
-         month_aggregations['storage_cost'] = 'sum'
+         month_aggregations['hourly_network_cost'] = 'sum'
+         month_aggregations['hourly_raw_data_store_cost'] = 'sum'
     
     df_monthly = traffic.traffic.groupby('Month').agg(month_aggregations).reset_index()
+    df_monthly.rename(columns={
+        "hourly_network_cost": "network_cost",
+        "hourly_raw_data_store_cost": "storage_cost"
+    }, inplace=True)
 
     metrics.redis.save_str("simulation_monthly", sim_name, 
         df_monthly.to_csv(index=True))
@@ -402,19 +406,10 @@ def simulate(twin, traffic):
         totals["storage_cost"] = float(traffic.traffic.hourly_raw_data_store_cost.sum())
         totals["pipeline_cost"] = float(traffic.traffic.pipeline_cost.sum())
         totals["total_cost"] = totals["network_cost"] + totals["storage_cost"] + totals["pipeline_cost"]
-        df_monthly_nc = df_monthly = traffic.traffic.groupby('Month').agg({
-            'network_cost': 'sum',
-            'storage_cost': 'sum',
-            'total_cost': 'sum',
-        # add more fields as needed
-         }).reset_index()
-        
 
     metrics.redis.save_str("simulation_summary", sim_name, 
         json.dumps(totals))
     
-
-
     return twin
 
 

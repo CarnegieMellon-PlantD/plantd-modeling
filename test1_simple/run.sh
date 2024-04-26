@@ -3,6 +3,7 @@ export EXPERIMENT_NAMES=test-pipeline.sample-experiment
 export REDIS_HOST="localhost"
 export REDIS_PORT="6379"
 export REDIS_PASSWORD=""
+export TESTDIR=test1_simple
 
 # Prometheus and opencost need not be port forwarded
 # (Better if they are not, in case a bug in the test consults them)
@@ -10,7 +11,7 @@ export REDIS_PASSWORD=""
 # Redis local should be up, and loaded with cache values only
 redis-cli ping
 redis-cli flushall
-python redis_load.py test1_simple/target-redis.json
+python redis_load.py $TESTDIR/target-redis.json
 
 
 # SIM1: No scenario, just simple model built from experiment
@@ -24,11 +25,10 @@ export SCENARIO_NAME=
 export NETCOST_NAME=
 export MODEL_TYPE="simple"
 export DIGITAL_TWIN_TYPE="regular"
-export DATASET_JSON="`cat test1_simple/dataset.json`"
-export EXPERIMENT_JSON="`cat test1_simple/experiment.json`"
-export LOAD_PATTERN_NAMES=test-pipeline.test1-loadpattern
-export LOAD_PATTERN_JSON="`cat test1_simple/loadpattern.json`"
-source test1_simple/traffic-model-nominal.env
+export DATASET_JSON="`cat $TESTDIR/dataset.json`"
+export EXPERIMENT_JSON="`cat $TESTDIR/experiment.json`"
+export LOAD_PATTERN_JSON="`cat $TESTDIR/loadpattern.json`"
+source $TESTDIR/traffic-model-nominal.env
 export TWIN_NAME="test-pipeline.test1-twin"
 export SIM_NAME="test-pipeline.test1-sim"
 

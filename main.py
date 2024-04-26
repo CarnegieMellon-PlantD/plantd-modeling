@@ -55,6 +55,7 @@ elif sys.argv[1] == "sim_all":
             #quit()
 
         config = configuration.ConfigurationConnectionEnvVars()
+
         if config.scenario is None:  # Could also check for schemaaware as DIGITAL_TWIN_TYPE, but redundant
             tmodel = trafficmodel.forecast(ARBITRARY_FUTURE_YEAR, from_cached=from_cached)
             pmodel = build.build_twin(os.environ['MODEL_TYPE'], from_cached=from_cached)
