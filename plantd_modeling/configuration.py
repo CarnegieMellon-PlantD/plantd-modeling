@@ -329,6 +329,8 @@ class ConfigurationConnectionEnvVars:
         self.load_patterns = {}
         self.datasets = {}
         experiment_names = os.environ["EXPERIMENT_NAMES"].split(",")
+        if '' in experiment_names:
+            experiment_names.remove('')
         #load_pattern_names = os.environ.get("LOAD_PATTERN_NAMES","").split(",")
         exp_raw = json.loads(os.environ.get("EXPERIMENT_JSON",'{"items":[]}'))
         lp_raw = json.loads(os.environ.get("LOAD_PATTERN_JSON",'{"items":[]}'))
@@ -340,8 +342,8 @@ class ConfigurationConnectionEnvVars:
                 continue
             self.experiments[experiment_name] = Experiment(item)
 
-        if len(self.experiments) == 0 and experiment_names != "":
-            raise Exception(f"Experiment(s) {experiment_names} not found in experiment.json")
+        if len(experiment_names) > len(self.experiments):
+            raise Exception(f"Not all experiment(s) {experiment_names} found in experiment.json")
 
         for item in lp_raw["items"]:
             load_pattern_name = KubernetesName.from_json(item["metadata"])

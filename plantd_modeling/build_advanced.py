@@ -123,6 +123,7 @@ def build_advanced_twin(model_type, from_cached=False):
     
     if len(config.experiments) == 0:
         print("No experiments found")
+        return twin.NullModel()
         
 
     # Here's what has to happen here.

@@ -1,0 +1,370 @@
+{
+    "apiVersion": "v1",
+    "items": [
+        {
+            "apiVersion": "windtunnel.plantd.org/v1alpha1",
+            "kind": "DataSet",
+            "metadata": {
+                "creationTimestamp": "2024-04-19T15:35:01Z",
+                "generation": 2,
+                "name": "sample-dataset",
+                "namespace": "test-pipeline",
+                "resourceVersion": "132948385",
+                "uid": "c53e29ed-238c-446f-a167-1e6942d5462f"
+            },
+            "spec": {
+                "compressPerSchema": false,
+                "compressedFileFormat": "zip",
+                "fileFormat": "csv",
+                "numFiles": 100,
+                "schemas": [
+                    {
+                        "name": "product",
+                        "numFilesPerCompressedFile": {
+                            "max": 1,
+                            "min": 1
+                        },
+                        "numRecords": {
+                            "max": 3,
+                            "min": 1
+                        }
+                    },
+                    {
+                        "name": "supplier",
+                        "numFilesPerCompressedFile": {
+                            "max": 1,
+                            "min": 1
+                        },
+                        "numRecords": {
+                            "max": 3,
+                            "min": 1
+                        }
+                    },
+                    {
+                        "name": "warehouse",
+                        "numFilesPerCompressedFile": {
+                            "max": 1,
+                            "min": 1
+                        },
+                        "numRecords": {
+                            "max": 3,
+                            "min": 1
+                        }
+                    }
+                ],
+                "storageSize": "2Gi"
+            },
+            "status": {
+                "completionTime": "2024-04-19T17:04:00Z",
+                "jobStatus": "Success",
+                "lastGeneration": 2,
+                "pvcStatus": "Bound",
+                "startTime": "2024-04-19T17:03:48Z"
+            }
+        },
+        {
+            "apiVersion": "windtunnel.plantd.org/v1alpha1",
+            "kind": "DataSet",
+            "metadata": {
+                "creationTimestamp": "2024-04-20T20:00:30Z",
+                "generation": 1,
+                "name": "test1-dataset",
+                "namespace": "test-pipeline",
+                "resourceVersion": "133417192",
+                "uid": "bc02630f-63fb-49fd-b4d6-2bbd00b2a589"
+            },
+            "spec": {
+                "compressPerSchema": false,
+                "compressedFileFormat": "zip",
+                "fileFormat": "csv",
+                "numFiles": 100,
+                "schemas": [
+                    {
+                        "name": "product",
+                        "numFilesPerCompressedFile": {
+                            "max": 1,
+                            "min": 1
+                        },
+                        "numRecords": {
+                            "max": 3,
+                            "min": 1
+                        }
+                    },
+                    {
+                        "name": "supplier",
+                        "numFilesPerCompressedFile": {
+                            "max": 1,
+                            "min": 1
+                        },
+                        "numRecords": {
+                            "max": 3,
+                            "min": 1
+                        }
+                    },
+                    {
+                        "name": "warehouse",
+                        "numFilesPerCompressedFile": {
+                            "max": 1,
+                            "min": 1
+                        },
+                        "numRecords": {
+                            "max": 3,
+                            "min": 1
+                        }
+                    }
+                ]
+            },
+            "status": {
+                "completionTime": "2024-04-20T20:00:42Z",
+                "jobStatus": "Success",
+                "lastGeneration": 1,
+                "pvcStatus": "Bound",
+                "startTime": "2024-04-20T20:00:30Z"
+            }
+        },
+        {
+            "apiVersion": "windtunnel.plantd.org/v1alpha1",
+            "kind": "DataSet",
+            "metadata": {
+                "creationTimestamp": "2024-04-20T21:19:03Z",
+                "generation": 1,
+                "name": "test3-dataset",
+                "namespace": "test-pipeline",
+                "resourceVersion": "133440271",
+                "uid": "ece33df0-54cb-4864-8e63-0ca003f0a53d"
+            },
+            "spec": {
+                "compressPerSchema": false,
+                "compressedFileFormat": "zip",
+                "fileFormat": "csv",
+                "numFiles": 100,
+                "schemas": [
+                    {
+                        "name": "product",
+                        "numFilesPerCompressedFile": {
+                            "max": 1,
+                            "min": 1
+                        },
+                        "numRecords": {
+                            "max": 3,
+                            "min": 1
+                        }
+                    },
+                    {
+                        "name": "supplier",
+                        "numFilesPerCompressedFile": {
+                            "max": 1,
+                            "min": 1
+                        },
+                        "numRecords": {
+                            "max": 3,
+                            "min": 1
+                        }
+                    },
+                    {
+                        "name": "warehouse",
+                        "numFilesPerCompressedFile": {
+                            "max": 1,
+                            "min": 1
+                        },
+                        "numRecords": {
+                            "max": 3,
+                            "min": 1
+                        }
+                    }
+                ]
+            },
+            "status": {
+                "completionTime": "2024-04-20T21:19:17Z",
+                "jobStatus": "Success",
+                "lastGeneration": 1,
+                "pvcStatus": "Bound",
+                "startTime": "2024-04-20T21:19:03Z"
+            }
+        },
+        {
+            "apiVersion": "windtunnel.plantd.org/v1alpha1",
+            "kind": "DataSet",
+            "metadata": {
+                "creationTimestamp": "2024-04-20T21:38:38Z",
+                "generation": 1,
+                "name": "test3p-dataset",
+                "namespace": "test-pipeline",
+                "resourceVersion": "133445985",
+                "uid": "9ccc4863-6fab-4037-9a4f-da8cba4f256f"
+            },
+            "spec": {
+                "compressPerSchema": false,
+                "compressedFileFormat": "zip",
+                "fileFormat": "csv",
+                "numFiles": 100,
+                "schemas": [
+                    {
+                        "name": "product",
+                        "numFilesPerCompressedFile": {
+                            "max": 100,
+                            "min": 100
+                        },
+                        "numRecords": {
+                            "max": 1,
+                            "min": 1
+                        }
+                    },
+                    {
+                        "name": "supplier",
+                        "numFilesPerCompressedFile": {
+                            "max": 1,
+                            "min": 1
+                        },
+                        "numRecords": {
+                            "max": 1,
+                            "min": 1
+                        }
+                    },
+                    {
+                        "name": "warehouse",
+                        "numFilesPerCompressedFile": {
+                            "max": 1,
+                            "min": 1
+                        },
+                        "numRecords": {
+                            "max": 1,
+                            "min": 1
+                        }
+                    }
+                ]
+            },
+            "status": {
+                "completionTime": "2024-04-20T21:38:51Z",
+                "jobStatus": "Success",
+                "lastGeneration": 1,
+                "pvcStatus": "Bound",
+                "startTime": "2024-04-20T21:38:38Z"
+            }
+        },
+        {
+            "apiVersion": "windtunnel.plantd.org/v1alpha1",
+            "kind": "DataSet",
+            "metadata": {
+                "creationTimestamp": "2024-04-20T21:38:56Z",
+                "generation": 1,
+                "name": "test3s-dataset",
+                "namespace": "test-pipeline",
+                "resourceVersion": "133446159",
+                "uid": "082f75c0-4a45-49dd-bd8a-35eed54c9379"
+            },
+            "spec": {
+                "compressPerSchema": false,
+                "compressedFileFormat": "zip",
+                "fileFormat": "csv",
+                "numFiles": 100,
+                "schemas": [
+                    {
+                        "name": "product",
+                        "numFilesPerCompressedFile": {
+                            "max": 1,
+                            "min": 1
+                        },
+                        "numRecords": {
+                            "max": 1,
+                            "min": 1
+                        }
+                    },
+                    {
+                        "name": "supplier",
+                        "numFilesPerCompressedFile": {
+                            "max": 100,
+                            "min": 100
+                        },
+                        "numRecords": {
+                            "max": 1,
+                            "min": 1
+                        }
+                    },
+                    {
+                        "name": "warehouse",
+                        "numFilesPerCompressedFile": {
+                            "max": 1,
+                            "min": 1
+                        },
+                        "numRecords": {
+                            "max": 1,
+                            "min": 1
+                        }
+                    }
+                ]
+            },
+            "status": {
+                "completionTime": "2024-04-20T21:39:12Z",
+                "jobStatus": "Success",
+                "lastGeneration": 1,
+                "pvcStatus": "Bound",
+                "startTime": "2024-04-20T21:38:56Z"
+            }
+        },
+        {
+            "apiVersion": "windtunnel.plantd.org/v1alpha1",
+            "kind": "DataSet",
+            "metadata": {
+                "creationTimestamp": "2024-04-20T21:39:02Z",
+                "generation": 1,
+                "name": "test3w-dataset",
+                "namespace": "test-pipeline",
+                "resourceVersion": "133446206",
+                "uid": "659651b1-94da-42d0-8f77-be00eff420b6"
+            },
+            "spec": {
+                "compressPerSchema": false,
+                "compressedFileFormat": "zip",
+                "fileFormat": "csv",
+                "numFiles": 100,
+                "schemas": [
+                    {
+                        "name": "product",
+                        "numFilesPerCompressedFile": {
+                            "max": 1,
+                            "min": 1
+                        },
+                        "numRecords": {
+                            "max": 1,
+                            "min": 1
+                        }
+                    },
+                    {
+                        "name": "supplier",
+                        "numFilesPerCompressedFile": {
+                            "max": 1,
+                            "min": 1
+                        },
+                        "numRecords": {
+                            "max": 1,
+                            "min": 1
+                        }
+                    },
+                    {
+                        "name": "warehouse",
+                        "numFilesPerCompressedFile": {
+                            "max": 100,
+                            "min": 100
+                        },
+                        "numRecords": {
+                            "max": 1,
+                            "min": 1
+                        }
+                    }
+                ]
+            },
+            "status": {
+                "completionTime": "2024-04-20T21:39:17Z",
+                "jobStatus": "Success",
+                "lastGeneration": 1,
+                "pvcStatus": "Bound",
+                "startTime": "2024-04-20T21:39:02Z"
+            }
+        }
+    ],
+    "kind": "List",
+    "metadata": {
+        "resourceVersion": ""
+    }
+}

@@ -1,0 +1,19 @@
+{
+    "apiVersion": "windtunnel.plantd.org/v1alpha1",
+    "kind": "NetCost",
+    "metadata": {
+        "creationTimestamp": "2024-04-23T01:41:20Z",
+        "generation": 3,
+        "name": "sa-netcost",
+        "namespace": "test-pipeline",
+        "resourceVersion": "134424637",
+        "uid": "19ce4e49-13fb-4732-89d6-683b4086c2dc"
+    },
+    "spec": {
+        "netCostPerMB": "0.01",
+        "processedDataRetentionPolicyMonths": 6,
+        "processedDataStoreCostPerMBMonth": "0.01",
+        "rawDataRetentionPolicyMonths": 12,
+        "rawDataStoreCostPerMBMonth": "0.001"
+    }
+}

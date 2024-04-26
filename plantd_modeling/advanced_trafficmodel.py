@@ -4,7 +4,7 @@ import os
 from datetime import timedelta, datetime
 from dateutil.parser import parse
 import re
-from plantd_modeling import configuration, metrics
+from plantd_modeling import configuration, metrics, twin
 import io
 from calendar import monthrange
 import numpy as np
@@ -188,13 +188,16 @@ class AdvancedTrafficModel(dict):
         t["model_name"] = params["model_name"]
         return t
     
-    def calculate(self):
-        if not hasattr(self, "pipeline_model"):
-            raise "Wind tunnel measurements not set"
+    def calculate(self, pipeline_model):
+        self.pipeline_model = pipeline_model
+        if type(pipeline_model) is twin.NullModel:
+            print("No pipeline model set; cannot calculate throughput")
+            return
         if not hasattr(self, "traffic"):
             raise "Run generate_traffic first"
         if "queue_len" in self.traffic.columns:   # already calculated!
             return
+        
         self.traffic["queue_len"] = 0
         self.traffic["throughput"] = 0
         self.traffic["latency_lifo"] = 0
@@ -239,19 +242,7 @@ class AdvancedTrafficModel(dict):
         if pct_latency_met >= sla["latency_sla_percent"]:
             print(f"Latency SLA is met: latency was less than {sla['latency_sla_limit']}s/record {pct_latency_met}% of the time; it only needed to be met {sla['latency_sla_percent']}%")
         return {"sla_met": str(pct_latency_met >= sla["latency_sla_percent"]), "pct_latency_met": pct_latency_met}
-    
-    def calculate_throughput(self, pipeline_model):
-        self.pipeline_model = pipeline_model
-        print(f"Calculating throughput")
-        self.calculate()
-        return self.traffic.throughput
-    
-    def calculate_queue(self,  pipeline_model):
-        self.pipeline_model = pipeline_model
-        print(f"Calculating queue")
-        self.calculate()
-        return self.traffic.queue_len
-        
+            
 def forecast(year, scenario, min_or_max="max",  from_cached=False):
     
     traffic_model_name = os.environ['TRAFFIC_MODEL_NAME']

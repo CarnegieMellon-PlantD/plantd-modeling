@@ -1,0 +1,45 @@
+apiVersion: windtunnel.plantd.org/v1alpha1
+kind: DataSet
+metadata:
+  name: test3p-dataset
+  namespace: test-pipeline
+spec:
+  # the file format of the each file containing the generated data 
+  # this may or may not be the output file format based on whether you want to compress these files
+  fileFormat: "csv"
+  # the file format for the compressed files 
+  # each file inside the compressed file is of "fileFormat" format specified above
+  # this is the output format if specified for the files
+  compressedFileFormat: "zip"
+  # if you wish files from all the different schemas to compressed into one compressed file leave this field as false
+  # if you wish to have a different compressed file for every schema, mark this field as true
+  compressPerSchema: false
+  # the total number of output files irrespective of compression
+  # unless "compressPerSchema" is false, this field is applicable per schema
+  numFiles: 100
+  schemas:
+    - name: product
+      # the number of records to be generated in each output file
+      # a random number is picked from the specified range
+      numRecords:
+        min: 1
+        max: 1
+      # the number of intermediate files to be compressed into a single compressed file
+      # a random number is picked from the specified range
+      numFilesPerCompressedFile:
+        min: 100
+        max: 100
+    - name: supplier
+      numRecords:
+        min: 1
+        max: 1
+      numFilesPerCompressedFile:
+        min: 1
+        max: 1
+    - name: warehouse
+      numRecords:
+        min: 1
+        max: 1
+      numFilesPerCompressedFile:
+        min: 1
+        max: 1
