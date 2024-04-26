@@ -24,6 +24,21 @@ class Redis:
             raise Exception("REDIS_HOST environment variable not set")
         self.r = redis.Redis(host=redis_host, port=redis_port, db=0, decode_responses=True, password=redis_password)
 
+    def list_keys(self, prefix):
+        return self.r.keys(prefix + "*")
+    
+    def dumpall(self, prefix, outfile):
+        outj = {
+            key: self.r.get(key)
+                for key in self.list_keys(prefix)
+        }
+        json.dump(outj, open(outfile,"w"))
+        
+    def loadall(self, prefix, outfile):
+        outj = json.load(open(outfile))
+        for k in outj:
+            self.r.set(k, outj[k])
+
     def save_dict(self, type, name, data):
         self.r.set(f"plantd:{type}:{name}", json.dumps(data))
 
@@ -46,6 +61,7 @@ try:
 except Exception as e:
     print(f"Not connecting to redis: {e}")
     redis = None
+    
 
 class Metrics:
     def __init__(self, prometheus_host) -> None:

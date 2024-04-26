@@ -104,7 +104,7 @@ def describe_experiment_advanced(config, experiment_name, from_cached=False):
     }
 
 def build_advanced_twin(model_type, from_cached=False):
-    twin_name = os.environ['TWIN_NAME']
+    twin_name = os.environ.get('TWIN_NAME','')
 
     config = configuration.ConfigurationConnectionEnvVars()
 
@@ -124,7 +124,6 @@ def build_advanced_twin(model_type, from_cached=False):
     if len(config.experiments) == 0:
         print("No experiments found")
         
-        return
 
     # Here's what has to happen here.
     #   - For each experiment, get the metrics

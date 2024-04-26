@@ -87,9 +87,6 @@ class NetCost:
             * self.raw_data_store_cost_per_mb_month/HOURS_IN_AVG_MONTH 
 
     
-
-
-
 @dataclass
 class ScenarioTask():
     months_relevant: List[int]
@@ -336,11 +333,16 @@ class ConfigurationConnectionEnvVars:
         exp_raw = json.loads(os.environ.get("EXPERIMENT_JSON",'{"items":[]}'))
         lp_raw = json.loads(os.environ.get("LOAD_PATTERN_JSON",'{"items":[]}'))
         ds_raw = json.loads(os.environ.get("DATASET_JSON",'{"items":[]}'))
+
         for item in exp_raw["items"]:
             experiment_name = KubernetesName.from_json(item["metadata"])
             if experiment_name.dotted_name not in experiment_names: 
                 continue
             self.experiments[experiment_name] = Experiment(item)
+
+        if len(self.experiments) == 0 and experiment_names != "":
+            raise Exception(f"Experiment(s) {experiment_names} not found in experiment.json")
+
         for item in lp_raw["items"]:
             load_pattern_name = KubernetesName.from_json(item["metadata"])
             self.load_patterns[load_pattern_name] = LoadPattern(item)
@@ -351,8 +353,8 @@ class ConfigurationConnectionEnvVars:
             try:
                 exp.load_patterns = {k:self.load_patterns[v] for k,v in exp.load_pattern_names.items()}
             except  KeyError as ke:
-                print(f"Not reading load patterns of {exp.experiment_name}: {ke}")
-            #exp.pipeline = self.get_pipeline_metadata(exp.pipeline_name)
+                raise Exception(f"Load patterns of experiment {exp.experiment_name} not found: {ke}")
+
         self.scenario = None
         self.netcosts = None
         if "SCENARIO" in os.environ:
@@ -363,7 +365,7 @@ class ConfigurationConnectionEnvVars:
             self.netcosts = NetCost(json.loads(os.environ["NETCOST"]))
         for k in os.environ.keys():
             if k[0] in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
-                print(f"export {k}={os.environ[k]}")
+                print(f"export {k}={os.environ[k][:300]}")
         
     def get_experiment_metadata(self):
         return self.experiments

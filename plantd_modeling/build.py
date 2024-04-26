@@ -43,7 +43,6 @@ def describe_experiment(config, experiment_name, from_cached=False):
             print(f"  {phase} records processed = {recs_processed.sum()} (percentage of injected = {recs_processed.sum() / records_injected * 100}%)")
             earliest[phase] = mex[phase][mex[phase] != 0].first_valid_index()
         else:
-            #import pdb; pdb.set_trace()
             mean_latencies[phase] = mex[phase].mean()
             median_latencies[phase] = mex[phase].median()
 
@@ -54,7 +53,6 @@ def describe_experiment(config, experiment_name, from_cached=False):
     # time we'll use to calculate latency
     first_complete_pass = max(earliest.values())
 
-    #import pdb; pdb.set_trace()
     if "good" in config.experiments[experiment_name].pipeline_name.dotted_name:
         pipeline_resource_namespace = "ubi"
     elif "bad" in config.experiments[experiment_name].pipeline_name.dotted_name:
@@ -72,7 +70,6 @@ def describe_experiment(config, experiment_name, from_cached=False):
         config.experiments[experiment_name].start_time, config.experiments[experiment_name].end_time,
         from_cached=from_cached)
     
-    #import pdb; pdb.set_trace()
     total_cost = sum([cost_info[phase]["total_cost"] for phase in cost_info])
 
     # I can't reconcile the counts here for a few reasons:
@@ -96,7 +93,7 @@ def describe_experiment(config, experiment_name, from_cached=False):
     }
 
 def build_twin(model_type, from_cached=False):
-    twin_name = os.environ['TWIN_NAME']
+    twin_name = os.environ.get('TWIN_NAME', '')
 
     config = configuration.ConfigurationConnectionEnvVars()
 
@@ -116,7 +113,7 @@ def build_twin(model_type, from_cached=False):
     if len(config.experiments) == 0:
         print("No experiments found")
         
-        return
+        
 
     # This particular proof-of-concept model only uses the first experiment
     # Any others are processed, but not used

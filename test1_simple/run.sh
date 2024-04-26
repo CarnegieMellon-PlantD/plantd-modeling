@@ -1,47 +1,30 @@
-
-# if false; then...
-if false; then
-    aws eks --region us-east-1 update-kubeconfig --name windtunnel-eks-GU7jql7j
-    kubectl proxy &
-    kubectl port-forward -n plantd-operator-system svc/plantd-studio-service 3000:80   &
-    kubectl port-forward -n plantd-operator-system pod/opencost-757d5b9c8-7fvtq 9003  &
-    kubectl port-forward -n plantd-operator-system pod/prometheus-prometheus-0 9090:9090 &
-        # plantd-thanos-querier, plantd-opencost, plantd-redis
-
-    kubectl port-forward -n plantd-operator-system svc/plantd-thanos-querier 9090:9090 &
-    kubectl port-forward -n plantd-operator-system svc/plantd-opencost 9003:9003 &
-    kubectl port-forward -n plantd-operator-system svc/plantd-redis 6377:6379 &
-
-fi
-
+# Experiment name previously set up in example files
+export EXPERIMENT_NAMES=test-pipeline.sample-experiment
 export REDIS_HOST="localhost"
-export REDIS_PORT="6377"
+export REDIS_PORT="6379"
 export REDIS_PASSWORD=""
+
+# Prometheus and opencost need not be port forwarded
+# (Better if they are not, in case a bug in the test consults them)
+
+# Redis local should be up, and loaded with cache values only
+redis-cli ping
+redis-cli flushall
+python redis_load.py test1_simple/target-redis.json
+
+
+# SIM1: No scenario, just simple model built from experiment
 export PROMETHEUS_HOST="http://localhost:9090"
 export PROMETHEUS_PASSWORD=""
 export PROMETHEUS_ENDPOINT=$PROMETHEUS_HOST"/api/v1/query"
 export OPENCOST_ENDPOINT="http://localhost:9003/allocation"
 export PIPELINE_LABEL_KEYS=pipeline-infrastructure
 export PIPELINE_LABEL_VALUES=testpipeline
-
-#export FROM_CACHED="from_cached"
-export FROM_CACHED=
-
-# if not cached, then load test1_simple/experiment.json with real data from k8s
-# if cached, then load test1_simple/experiment.json with fake data
-#
-if [ -z "$FROM_CACHED" ]; then
-    echo "REALOADING EXPERIMENT INFO FROM KUBERNETES"
-    kubectl get experiment -A -o json > test1_simple/experiment.json
-fi
-
-# SIM1: No scenario, just simple model built from experiment
 export SCENARIO_NAME=
 export NETCOST_NAME=
 export MODEL_TYPE="simple"
 export DIGITAL_TWIN_TYPE="regular"
 export DATASET_JSON="`cat test1_simple/dataset.json`"
-export EXPERIMENT_NAMES=test-pipeline.test1-experiment
 export EXPERIMENT_JSON="`cat test1_simple/experiment.json`"
 export LOAD_PATTERN_NAMES=test-pipeline.test1-loadpattern
 export LOAD_PATTERN_JSON="`cat test1_simple/loadpattern.json`"
@@ -49,23 +32,16 @@ source test1_simple/traffic-model-nominal.env
 export TWIN_NAME="test-pipeline.test1-twin"
 export SIM_NAME="test-pipeline.test1-sim"
 
-# Delete stuff that we're going to populate
-redis-cli del plantd:trafficmodel_predictions:traffic-model-nominal
-redis-cli del plantd:metrics:test-pipeline.test1-experiment
-redis-cli del plantd:experiment_summary:test-pipeline.test1-experiment
-redis-cli del plantd:twinmodel:test-pipeline.test1-twin
-redis-cli del plantd:simulation_traffic:test-pipeline.test1-sim
-redis-cli del plantd:simulation_summary:test-pipeline.test1-sim
-
-python main.py sim_all $FROM_CACHED
+python main.py sim_all from_cached
 
 # Check things that should have been populated
 echo "plantd:trafficmodel_predictions:traffic-model-nominal:" `redis-cli get plantd:trafficmodel_predictions:traffic-model-nominal | wc -l`
-echo "plantd:metrics:test-pipeline.test1-experiment:" `redis-cli get plantd:metrics:test-pipeline.test1-experiment | wc -l`
-echo "plantd:experiment_summary:test-pipeline.test1-experiment:" `redis-cli get plantd:experiment_summary:test-pipeline.test1-experiment | wc -l`
+echo "plantd:metrics:$EXPERIMENT_NAMES:" `redis-cli get plantd:metrics:$EXPERIMENT_NAMES | wc -l`
+echo "plantd:experiment_summary:$EXPERIMENT_NAMES:" `redis-cli get plantd:experiment_summary:$EXPERIMENT_NAMES | wc -l`
 echo "plantd:twinmodel:test-pipeline.test1-twin:" `redis-cli get plantd:twinmodel:test-pipeline.test1-twin | wc -l`
 echo "plantd:simulation_traffic:test-pipeline.test1-sim:" `redis-cli get plantd:simulation_traffic:test-pipeline.test1-sim | wc -l`
 echo "plantd:simulation_summary:test-pipeline.test1-sim:" `redis-cli get plantd:simulation_summary:test-pipeline.test1-sim | wc -l`
+echo "plantd:simulation_monthly:test-pipeline.test1-sim:" `redis-cli get plantd:simulation_monthly:test-pipeline.test1-sim | wc -l`
 
 
 # Note: writes to these REDIS keys:
