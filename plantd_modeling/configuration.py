@@ -361,10 +361,8 @@ class ConfigurationConnectionEnvVars:
         self.netcosts = None
         if "SCENARIO" in os.environ:
             self.scenario = Scenario.deserialize(os.environ["SCENARIO"])
-        if "NETCOSTS" in os.environ:
+        if "NETCOSTS" in os.environ and os.environ["NETCOSTS"].strip() != "":
             self.netcosts = NetCost(json.loads(os.environ["NETCOSTS"]))
-        if "NETCOST" in os.environ:
-            self.netcosts = NetCost(json.loads(os.environ["NETCOST"]))
         for k in os.environ.keys():
             if k[0] in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
                 print(f"export {k}={os.environ[k][:300]}")

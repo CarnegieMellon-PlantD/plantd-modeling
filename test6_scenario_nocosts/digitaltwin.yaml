@@ -1,0 +1,23 @@
+apiVersion: windtunnel.plantd.org/v1alpha1
+kind: DigitalTwin
+metadata:
+  name: test3-digitaltwin
+  namespace: test-pipeline
+spec:
+  # Type of digital twin model.
+  # Available values are `simple`, `quickscaling`, and `autoscaling`.
+  modelType: "simple"
+  # Type of digital twin.
+  # Available values are `regular` and `schemaaware`.
+  digitalTwinType: "schemaaware"
+  # DataSet to break down into Schemas to train the DigitalTwin.
+  # Effective only when `digitalTwinType` is `schemaaware`.
+  dataSet:
+    name: "test3-dataset"
+  # Pipeline to use to train the DigitalTwin.
+  # Effective only when `digitalTwinType` is `schemaaware`.
+  pipeline:
+    name: "sample-pipeline"
+  # Maximum RPS in the populated LoadPatterns.
+  # Effective only when `digitalTwinType` is `schemaaware`.
+  pipelineCapacity: 200

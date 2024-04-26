@@ -1,0 +1,614 @@
+{
+    "apiVersion": "v1",
+    "items": [
+        {
+            "apiVersion": "windtunnel.plantd.org/v1alpha1",
+            "kind": "Experiment",
+            "metadata": {
+                "creationTimestamp": "2024-04-25T06:52:26Z",
+                "finalizers": [
+                    "experiment.windtunnel.plantd.org/finalizer"
+                ],
+                "generation": 1,
+                "name": "e2e-test2-schemaaware-bias-1",
+                "namespace": "test-pipeline",
+                "ownerReferences": [
+                    {
+                        "apiVersion": "windtunnel.plantd.org/v1alpha1",
+                        "blockOwnerDeletion": true,
+                        "controller": true,
+                        "kind": "DigitalTwin",
+                        "name": "e2e-test2-schemaaware",
+                        "uid": "9c5e1c4d-ee3e-4827-b159-a806504dc039"
+                    }
+                ],
+                "resourceVersion": "135308370",
+                "uid": "1e5047f4-7bfb-46b2-91db-caddf18e576e"
+            },
+            "spec": {
+                "endpointSpecs": [
+                    {
+                        "dataSpec": {
+                            "dataSetRef": {
+                                "name": "e2e-test2-schemaaware-bias-1"
+                            }
+                        },
+                        "endpointName": "upload",
+                        "loadPatternRef": {
+                            "name": "e2e-test2-schemaaware-bias",
+                            "namespace": "test-pipeline"
+                        }
+                    }
+                ],
+                "pipelineRef": {
+                    "name": "sample-dataset"
+                },
+                "useEndDetection": true
+            },
+            "status": {
+                "error": "Cannot find Pipeline \"test-pipeline/sample-dataset\": Pipeline.windtunnel.plantd.org \"sample-dataset\" not found",
+                "jobStatus": "Failed"
+            }
+        },
+        {
+            "apiVersion": "windtunnel.plantd.org/v1alpha1",
+            "kind": "Experiment",
+            "metadata": {
+                "creationTimestamp": "2024-04-25T06:52:26Z",
+                "finalizers": [
+                    "experiment.windtunnel.plantd.org/finalizer"
+                ],
+                "generation": 1,
+                "name": "e2e-test2-schemaaware-bias-2",
+                "namespace": "test-pipeline",
+                "ownerReferences": [
+                    {
+                        "apiVersion": "windtunnel.plantd.org/v1alpha1",
+                        "blockOwnerDeletion": true,
+                        "controller": true,
+                        "kind": "DigitalTwin",
+                        "name": "e2e-test2-schemaaware",
+                        "uid": "9c5e1c4d-ee3e-4827-b159-a806504dc039"
+                    }
+                ],
+                "resourceVersion": "135308386",
+                "uid": "f3d3bc42-1749-494b-85f1-a2ab394d7502"
+            },
+            "spec": {
+                "endpointSpecs": [
+                    {
+                        "dataSpec": {
+                            "dataSetRef": {
+                                "name": "e2e-test2-schemaaware-bias-2"
+                            }
+                        },
+                        "endpointName": "upload",
+                        "loadPatternRef": {
+                            "name": "e2e-test2-schemaaware-bias",
+                            "namespace": "test-pipeline"
+                        }
+                    }
+                ],
+                "pipelineRef": {
+                    "name": "sample-dataset"
+                },
+                "useEndDetection": true
+            },
+            "status": {
+                "error": "Cannot find Pipeline \"test-pipeline/sample-dataset\": Pipeline.windtunnel.plantd.org \"sample-dataset\" not found",
+                "jobStatus": "Failed"
+            }
+        },
+        {
+            "apiVersion": "windtunnel.plantd.org/v1alpha1",
+            "kind": "Experiment",
+            "metadata": {
+                "creationTimestamp": "2024-04-25T06:52:26Z",
+                "finalizers": [
+                    "experiment.windtunnel.plantd.org/finalizer"
+                ],
+                "generation": 1,
+                "name": "e2e-test2-schemaaware-bias-3",
+                "namespace": "test-pipeline",
+                "ownerReferences": [
+                    {
+                        "apiVersion": "windtunnel.plantd.org/v1alpha1",
+                        "blockOwnerDeletion": true,
+                        "controller": true,
+                        "kind": "DigitalTwin",
+                        "name": "e2e-test2-schemaaware",
+                        "uid": "9c5e1c4d-ee3e-4827-b159-a806504dc039"
+                    }
+                ],
+                "resourceVersion": "135308400",
+                "uid": "f4313f7a-bb4f-4c90-a90c-49479da8185f"
+            },
+            "spec": {
+                "endpointSpecs": [
+                    {
+                        "dataSpec": {
+                            "dataSetRef": {
+                                "name": "e2e-test2-schemaaware-bias-3"
+                            }
+                        },
+                        "endpointName": "upload",
+                        "loadPatternRef": {
+                            "name": "e2e-test2-schemaaware-bias",
+                            "namespace": "test-pipeline"
+                        }
+                    }
+                ],
+                "pipelineRef": {
+                    "name": "sample-dataset"
+                },
+                "useEndDetection": true
+            },
+            "status": {
+                "error": "Cannot find Pipeline \"test-pipeline/sample-dataset\": Pipeline.windtunnel.plantd.org \"sample-dataset\" not found",
+                "jobStatus": "Failed"
+            }
+        },
+        {
+            "apiVersion": "windtunnel.plantd.org/v1alpha1",
+            "kind": "Experiment",
+            "metadata": {
+                "creationTimestamp": "2024-04-25T17:19:22Z",
+                "finalizers": [
+                    "experiment.windtunnel.plantd.org/finalizer"
+                ],
+                "generation": 1,
+                "name": "e2e-test3-schemaaware-bias-1",
+                "namespace": "test-pipeline",
+                "ownerReferences": [
+                    {
+                        "apiVersion": "windtunnel.plantd.org/v1alpha1",
+                        "blockOwnerDeletion": true,
+                        "controller": true,
+                        "kind": "DigitalTwin",
+                        "name": "e2e-test3-schemaaware",
+                        "uid": "bccd0c43-037a-4041-86d2-22343b34aca4"
+                    }
+                ],
+                "resourceVersion": "135497450",
+                "uid": "c4ab859c-e732-4ec2-b111-851a8bbedf01"
+            },
+            "spec": {
+                "endpointSpecs": [
+                    {
+                        "dataSpec": {
+                            "dataSetRef": {
+                                "name": "e2e-test3-schemaaware-bias-1"
+                            }
+                        },
+                        "endpointName": "upload",
+                        "loadPatternRef": {
+                            "name": "e2e-test3-schemaaware-bias",
+                            "namespace": "test-pipeline"
+                        }
+                    }
+                ],
+                "pipelineRef": {
+                    "name": "sample-pipeline"
+                },
+                "useEndDetection": true
+            },
+            "status": {
+                "cloudProvider": "aws",
+                "completionTime": "2024-04-25T17:31:19Z",
+                "drainingStartTime": "2024-04-25T17:31:19Z",
+                "durations": {
+                    "upload": "10m0s"
+                },
+                "enableCostCalculation": true,
+                "error": "End detector Job \"test-pipeline/e2e-test3-schemaaware-bias-1-enddetect\" failed",
+                "jobStatus": "Completed",
+                "startTime": "2024-04-25T17:20:18Z",
+                "tags": {
+                    "pipeline-infrastructure": "testpipeline"
+                }
+            }
+        },
+        {
+            "apiVersion": "windtunnel.plantd.org/v1alpha1",
+            "kind": "Experiment",
+            "metadata": {
+                "creationTimestamp": "2024-04-25T17:19:22Z",
+                "finalizers": [
+                    "experiment.windtunnel.plantd.org/finalizer"
+                ],
+                "generation": 1,
+                "name": "e2e-test3-schemaaware-bias-2",
+                "namespace": "test-pipeline",
+                "ownerReferences": [
+                    {
+                        "apiVersion": "windtunnel.plantd.org/v1alpha1",
+                        "blockOwnerDeletion": true,
+                        "controller": true,
+                        "kind": "DigitalTwin",
+                        "name": "e2e-test3-schemaaware",
+                        "uid": "bccd0c43-037a-4041-86d2-22343b34aca4"
+                    }
+                ],
+                "resourceVersion": "135500999",
+                "uid": "e82a79e1-bb8a-49e3-9622-8fb1e5c3168a"
+            },
+            "spec": {
+                "endpointSpecs": [
+                    {
+                        "dataSpec": {
+                            "dataSetRef": {
+                                "name": "e2e-test3-schemaaware-bias-2"
+                            }
+                        },
+                        "endpointName": "upload",
+                        "loadPatternRef": {
+                            "name": "e2e-test3-schemaaware-bias",
+                            "namespace": "test-pipeline"
+                        }
+                    }
+                ],
+                "pipelineRef": {
+                    "name": "sample-pipeline"
+                },
+                "useEndDetection": true
+            },
+            "status": {
+                "cloudProvider": "aws",
+                "completionTime": "2024-04-25T17:42:41Z",
+                "drainingStartTime": "2024-04-25T17:42:41Z",
+                "durations": {
+                    "upload": "10m0s"
+                },
+                "enableCostCalculation": true,
+                "error": "End detector Job \"test-pipeline/e2e-test3-schemaaware-bias-2-enddetect\" failed",
+                "jobStatus": "Completed",
+                "startTime": "2024-04-25T17:31:40Z",
+                "tags": {
+                    "pipeline-infrastructure": "testpipeline"
+                }
+            }
+        },
+        {
+            "apiVersion": "windtunnel.plantd.org/v1alpha1",
+            "kind": "Experiment",
+            "metadata": {
+                "creationTimestamp": "2024-04-25T17:19:22Z",
+                "finalizers": [
+                    "experiment.windtunnel.plantd.org/finalizer"
+                ],
+                "generation": 1,
+                "name": "e2e-test3-schemaaware-bias-3",
+                "namespace": "test-pipeline",
+                "ownerReferences": [
+                    {
+                        "apiVersion": "windtunnel.plantd.org/v1alpha1",
+                        "blockOwnerDeletion": true,
+                        "controller": true,
+                        "kind": "DigitalTwin",
+                        "name": "e2e-test3-schemaaware",
+                        "uid": "bccd0c43-037a-4041-86d2-22343b34aca4"
+                    }
+                ],
+                "resourceVersion": "135505707",
+                "uid": "c468ef31-9ecd-4f8a-83ee-857da31005dd"
+            },
+            "spec": {
+                "endpointSpecs": [
+                    {
+                        "dataSpec": {
+                            "dataSetRef": {
+                                "name": "e2e-test3-schemaaware-bias-3"
+                            }
+                        },
+                        "endpointName": "upload",
+                        "loadPatternRef": {
+                            "name": "e2e-test3-schemaaware-bias",
+                            "namespace": "test-pipeline"
+                        }
+                    }
+                ],
+                "pipelineRef": {
+                    "name": "sample-pipeline"
+                },
+                "useEndDetection": true
+            },
+            "status": {
+                "cloudProvider": "aws",
+                "completionTime": "2024-04-25T17:57:44Z",
+                "drainingStartTime": "2024-04-25T17:57:44Z",
+                "durations": {
+                    "upload": "10m0s"
+                },
+                "enableCostCalculation": true,
+                "error": "End detector Job \"test-pipeline/e2e-test3-schemaaware-bias-3-enddetect\" failed",
+                "jobStatus": "Completed",
+                "startTime": "2024-04-25T17:42:56Z",
+                "tags": {
+                    "pipeline-infrastructure": "testpipeline"
+                }
+            }
+        },
+        {
+            "apiVersion": "windtunnel.plantd.org/v1alpha1",
+            "kind": "Experiment",
+            "metadata": {
+                "creationTimestamp": "2024-04-23T01:42:18Z",
+                "finalizers": [
+                    "experiment.windtunnel.plantd.org/finalizer"
+                ],
+                "generation": 1,
+                "name": "sa-dt-bias-1",
+                "namespace": "test-pipeline",
+                "ownerReferences": [
+                    {
+                        "apiVersion": "windtunnel.plantd.org/v1alpha1",
+                        "blockOwnerDeletion": true,
+                        "controller": true,
+                        "kind": "DigitalTwin",
+                        "name": "sa-dt",
+                        "uid": "bdbf718c-961c-4eeb-8bf1-e7c55480c58f"
+                    }
+                ],
+                "resourceVersion": "134384159",
+                "uid": "dd0ab629-728a-488e-b0a7-6d0c0faf9421"
+            },
+            "spec": {
+                "endpointSpecs": [
+                    {
+                        "dataSpec": {
+                            "dataSetRef": {
+                                "name": "sa-dt-bias-1"
+                            }
+                        },
+                        "endpointName": "upload",
+                        "loadPatternRef": {
+                            "name": "sa-dt-bias",
+                            "namespace": "test-pipeline"
+                        }
+                    }
+                ],
+                "pipelineRef": {
+                    "name": "sample-pipeline"
+                },
+                "useEndDetection": true
+            },
+            "status": {
+                "cloudProvider": "aws",
+                "completionTime": "2024-04-23T02:44:54Z",
+                "drainingStartTime": "2024-04-23T02:21:42Z",
+                "durations": {
+                    "upload": "10m0s"
+                },
+                "enableCostCalculation": true,
+                "jobStatus": "Completed",
+                "startTime": "2024-04-23T02:11:11Z",
+                "tags": {
+                    "pipeline-infrastructure": "testpipeline"
+                }
+            }
+        },
+        {
+            "apiVersion": "windtunnel.plantd.org/v1alpha1",
+            "kind": "Experiment",
+            "metadata": {
+                "creationTimestamp": "2024-04-23T01:42:18Z",
+                "finalizers": [
+                    "experiment.windtunnel.plantd.org/finalizer"
+                ],
+                "generation": 1,
+                "name": "sa-dt-bias-2",
+                "namespace": "test-pipeline",
+                "ownerReferences": [
+                    {
+                        "apiVersion": "windtunnel.plantd.org/v1alpha1",
+                        "blockOwnerDeletion": true,
+                        "controller": true,
+                        "kind": "DigitalTwin",
+                        "name": "sa-dt",
+                        "uid": "bdbf718c-961c-4eeb-8bf1-e7c55480c58f"
+                    }
+                ],
+                "resourceVersion": "134396027",
+                "uid": "d9f51e4d-f095-4da8-ad1b-ea362db1d4ea"
+            },
+            "spec": {
+                "endpointSpecs": [
+                    {
+                        "dataSpec": {
+                            "dataSetRef": {
+                                "name": "sa-dt-bias-2"
+                            }
+                        },
+                        "endpointName": "upload",
+                        "loadPatternRef": {
+                            "name": "sa-dt-bias",
+                            "namespace": "test-pipeline"
+                        }
+                    }
+                ],
+                "pipelineRef": {
+                    "name": "sample-pipeline"
+                },
+                "useEndDetection": true
+            },
+            "status": {
+                "cloudProvider": "aws",
+                "completionTime": "2024-04-23T03:24:23Z",
+                "drainingStartTime": "2024-04-23T02:55:41Z",
+                "durations": {
+                    "upload": "10m0s"
+                },
+                "enableCostCalculation": true,
+                "jobStatus": "Completed",
+                "startTime": "2024-04-23T02:45:14Z",
+                "tags": {
+                    "pipeline-infrastructure": "testpipeline"
+                }
+            }
+        },
+        {
+            "apiVersion": "windtunnel.plantd.org/v1alpha1",
+            "kind": "Experiment",
+            "metadata": {
+                "creationTimestamp": "2024-04-23T01:42:18Z",
+                "finalizers": [
+                    "experiment.windtunnel.plantd.org/finalizer"
+                ],
+                "generation": 1,
+                "name": "sa-dt-bias-3",
+                "namespace": "test-pipeline",
+                "ownerReferences": [
+                    {
+                        "apiVersion": "windtunnel.plantd.org/v1alpha1",
+                        "blockOwnerDeletion": true,
+                        "controller": true,
+                        "kind": "DigitalTwin",
+                        "name": "sa-dt",
+                        "uid": "bdbf718c-961c-4eeb-8bf1-e7c55480c58f"
+                    }
+                ],
+                "resourceVersion": "134373884",
+                "uid": "a394e386-67cb-4948-98c1-efbc2a25d3f4"
+            },
+            "spec": {
+                "endpointSpecs": [
+                    {
+                        "dataSpec": {
+                            "dataSetRef": {
+                                "name": "sa-dt-bias-3"
+                            }
+                        },
+                        "endpointName": "upload",
+                        "loadPatternRef": {
+                            "name": "sa-dt-bias",
+                            "namespace": "test-pipeline"
+                        }
+                    }
+                ],
+                "pipelineRef": {
+                    "name": "sample-pipeline"
+                },
+                "useEndDetection": true
+            },
+            "status": {
+                "cloudProvider": "aws",
+                "completionTime": "2024-04-23T02:10:46Z",
+                "drainingStartTime": "2024-04-23T01:53:29Z",
+                "durations": {
+                    "upload": "10m0s"
+                },
+                "enableCostCalculation": true,
+                "jobStatus": "Completed",
+                "startTime": "2024-04-23T01:42:58Z",
+                "tags": {
+                    "pipeline-infrastructure": "testpipeline"
+                }
+            }
+        },
+        {
+            "apiVersion": "windtunnel.plantd.org/v1alpha1",
+            "kind": "Experiment",
+            "metadata": {
+                "annotations": {
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"windtunnel.plantd.org/v1alpha1\",\"kind\":\"Experiment\",\"metadata\":{\"annotations\":{},\"name\":\"sample-experiment\",\"namespace\":\"test-pipeline\"},\"spec\":{\"endpointSpecs\":[{\"dataSpec\":{\"dataSetRef\":{\"name\":\"sample-dataset\"}},\"endpointName\":\"upload\",\"loadPatternRef\":{\"name\":\"sample-loadpattern\",\"namespace\":\"test-pipeline\"}}],\"pipelineRef\":{\"name\":\"sample-pipeline\"},\"useEndDetection\":true}}\n"
+                },
+                "creationTimestamp": "2024-04-23T00:40:36Z",
+                "finalizers": [
+                    "experiment.windtunnel.plantd.org/finalizer"
+                ],
+                "generation": 1,
+                "name": "sample-experiment",
+                "namespace": "test-pipeline",
+                "resourceVersion": "134348313",
+                "uid": "11345ffd-355b-40f0-b610-d026b6084f55"
+            },
+            "spec": {
+                "endpointSpecs": [
+                    {
+                        "dataSpec": {
+                            "dataSetRef": {
+                                "name": "sample-dataset"
+                            }
+                        },
+                        "endpointName": "upload",
+                        "loadPatternRef": {
+                            "name": "sample-loadpattern",
+                            "namespace": "test-pipeline"
+                        }
+                    }
+                ],
+                "pipelineRef": {
+                    "name": "sample-pipeline"
+                },
+                "useEndDetection": true
+            },
+            "status": {
+                "cloudProvider": "aws",
+                "completionTime": "2024-04-23T00:45:28Z",
+                "drainingStartTime": "2024-04-23T00:46:28Z",
+                "durations": {
+                    "upload": "5m0s"
+                },
+                "enableCostCalculation": true,
+                "jobStatus": "Completed",
+                "startTime": "2024-04-23T00:41:02Z",
+                "tags": {
+                    "pipeline-infrastructure": "testpipeline"
+                }
+            }
+        },
+        {
+            "apiVersion": "windtunnel.plantd.org/v1alpha1",
+            "kind": "Experiment",
+            "metadata": {
+                "creationTimestamp": "2024-04-23T06:17:56Z",
+                "finalizers": [
+                    "experiment.windtunnel.plantd.org/finalizer"
+                ],
+                "generation": 1,
+                "name": "sample-experiment-2",
+                "namespace": "test-pipeline",
+                "resourceVersion": "134469736",
+                "uid": "9942b556-bf9c-4c9f-be38-a13fe36f680f"
+            },
+            "spec": {
+                "endpointSpecs": [
+                    {
+                        "dataSpec": {
+                            "dataSetRef": {
+                                "name": "sample-dataset"
+                            }
+                        },
+                        "endpointName": "upload",
+                        "loadPatternRef": {
+                            "name": "sample-loadpattern",
+                            "namespace": "test-pipeline"
+                        }
+                    }
+                ],
+                "pipelineRef": {
+                    "name": "sample-pipeline"
+                },
+                "useEndDetection": true
+            },
+            "status": {
+                "cloudProvider": "aws",
+                "completionTime": "2024-04-23T07:32:59Z",
+                "drainingStartTime": "2024-04-23T06:23:42Z",
+                "durations": {
+                    "upload": "5m0s"
+                },
+                "enableCostCalculation": true,
+                "jobStatus": "Completed",
+                "startTime": "2024-04-23T06:18:16Z",
+                "tags": {
+                    "pipeline-infrastructure": "testpipeline"
+                }
+            }
+        }
+    ],
+    "kind": "List",
+    "metadata": {
+        "resourceVersion": ""
+    }
+}

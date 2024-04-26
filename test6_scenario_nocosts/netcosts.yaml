@@ -1,0 +1,16 @@
+apiVersion: windtunnel.plantd.org/v1alpha1
+kind: NetCost
+metadata:
+  name: test3-netcost
+  namespace: test-pipeline
+spec:
+  # The cost per MB of data transfer.
+  netCostPerMB: "0.01"
+  # The cost per MB per month of raw data storage.
+  rawDataStoreCostPerMBMonth: "0.001"
+  # The cost per MB per month of processed data storage.
+  processedDataStoreCostPerMBMonth: "0.01"
+  # The number of months the raw data is retained.
+  rawDataRetentionPolicyMonths: 12
+  # The number of months the processed data is retained.
+  processedDataRetentionPolicyMonths: 6
