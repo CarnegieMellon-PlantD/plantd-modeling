@@ -328,7 +328,7 @@ class ConfigurationConnectionEnvVars:
         self.experiments  = {}
         self.load_patterns = {}
         self.datasets = {}
-        experiment_names = os.environ["EXPERIMENT_NAMES"].split(",")
+        experiment_names = os.environ.get("EXPERIMENT_NAMES","").split(",")
         if '' in experiment_names:
             experiment_names.remove('')
         #load_pattern_names = os.environ.get("LOAD_PATTERN_NAMES","").split(",")

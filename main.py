@@ -23,10 +23,10 @@ if sys.argv[1] == "sim_all":
         
         if config.scenario is None:  # Could also check for schemaaware as DIGITAL_TWIN_TYPE, but redundant
             tmodel = trafficmodel.forecast(ARBITRARY_FUTURE_YEAR, from_cached=from_cached)
-            pmodel = build.build_twin(os.environ['MODEL_TYPE'], from_cached=from_cached)
+            pmodel = build.build_twin(os.environ('MODEL_TYPE','simple'), from_cached=from_cached)
         else:
             tmodel = advanced_trafficmodel.forecast(ARBITRARY_FUTURE_YEAR, config.scenario, from_cached=from_cached)
-            pmodel = build_advanced.build_advanced_twin(os.environ['MODEL_TYPE'], from_cached=from_cached)
+            pmodel = build_advanced.build_advanced_twin(os.environ('MODEL_TYPE','simple'), from_cached=from_cached)
         if config.netcosts:
             try:
                 netcost_results = config.netcosts.apply(tmodel)
