@@ -7,9 +7,72 @@ import math
 
 @dataclass
 class PipelineModel:
-    pass
+    def simulate(self, traffic):
+        #twin_name = os.environ['TWIN_NAME']
+        sim_name = os.environ['SIM_NAME']
+        #traffic_model_name = os.environ['TRAFFIC_MODEL_NAME']
+        
+        twin = self
+        #twin = SimpleModel.deserialize(open(f"fakeredis/twinmodel_{twin_name}.json").read())
+        #traffic = trafficmodel.TrafficModel.deserialize_parameters(open(f"fakeredis/trafficmodel_{traffic_model_name}.json").read())
+        #traffic.deserialize_forecast(f"fakeredis/trafficmodel_{traffic_model_name}.csv")
+        traffic.calculate(twin)
+        
+        metrics.redis.save_str("simulation_traffic", sim_name, traffic.traffic.to_csv(index=True))
+        
+        # TO DO: add SLA checks to the kubernetes objects, so they can be checked here.
+        # This sample code does the check, but it's not configurable by the user.
+        #sla_check = traffic.sla_check({"latency_sla_percent": 99.0, "latency_sla_limit": 70.0})
 
-class NullModel():
+        if "latency_fifo" in traffic.traffic.columns:
+            totals = {"total_pipeline_cost": float(traffic.traffic.pipeline_cost.sum()), 
+                    "avg_latency_s": float(traffic.traffic.latency_fifo.mean()),
+                    "max_latency_s": float(traffic.traffic.latency_fifo.max()), 
+                    "avg_queue": float(traffic.traffic.queue_len.mean()),
+                    "max_queue": float(traffic.traffic.queue_len.max()), 
+                    "avg_throughput_rph": float(traffic.traffic.throughput.mean()),
+                    "max_throughput_rph": float(traffic.traffic.throughput.max())}
+
+            month_aggregations = {
+                'latency_fifo': 'mean',
+                'pipeline_cost': 'sum',
+                'queue_len': 'mean',
+                'hourly': 'sum',
+            }
+        else:
+            month_aggregations = {}
+            totals = {}
+
+        for schema in traffic.traffic.columns:
+            if schema.startswith("task_") and schema.endswith("_rph"):
+                month_aggregations[schema] = 'sum'
+        
+        if "hourly_network_cost" in traffic.traffic.columns:
+            month_aggregations['bandwidth'] = 'sum'
+            month_aggregations['hourly_network_cost'] = 'sum'
+            month_aggregations['hourly_raw_data_store_cost'] = 'sum'
+        
+        df_monthly = traffic.traffic.groupby('Month').agg(month_aggregations).reset_index()
+        df_monthly.rename(columns={
+            "hourly_network_cost": "network_cost",
+            "hourly_raw_data_store_cost": "storage_cost"
+        }, inplace=True)
+
+        metrics.redis.save_str("simulation_monthly", sim_name, 
+            df_monthly.to_csv(index=True))
+
+        if "hourly_network_cost" in traffic.traffic.columns:
+            totals["network_cost"] = float(traffic.traffic.hourly_network_cost.sum())
+            totals["storage_cost"] = float(traffic.traffic.hourly_raw_data_store_cost.sum())
+            if "pipeline_cost" in traffic.traffic.columns:
+                totals["pipeline_cost"] = float(traffic.traffic.pipeline_cost.sum())
+                totals["total_cost"] = totals["network_cost"] + totals["storage_cost"] + totals["pipeline_cost"]
+
+        metrics.redis.save_str("simulation_summary", sim_name, 
+            json.dumps(totals))
+        
+
+class NullModel(PipelineModel):
     def reset(self):
         pass
     def input(self, recs_this_hour):
@@ -24,62 +87,63 @@ class NullModel():
             raise Exception(f"Unknown model type {params['model_type']}")
         return NullModel()
     
-def simulate(twin, traffic):
-    sim_name = os.environ['SIM_NAME']
-    traffic_model_name = os.environ['TRAFFIC_MODEL_NAME']
-    
-    #thru = traffic.calculate_throughput(twin)
-    #queue = traffic.calculate_queue(twin)
+    def simulate(self, traffic):
 
-    metrics.redis.save_str("simulation_traffic", sim_name, traffic.traffic.to_csv(index=True))
-    
-    # TO DO: add SLA checks to the kubernetes objects, so they can be checked here.
-    # This sample code does the check, but it's not configurable by the user.
-    #sla_check = traffic.sla_check({"latency_sla_percent": 99.0, "latency_sla_limit": 70.0})
+        sim_name = os.environ['SIM_NAME']
+        traffic_model_name = os.environ['TRAFFIC_MODEL_NAME']
+        
+        #thru = traffic.calculate_throughput(twin)
+        #queue = traffic.calculate_queue(twin)
 
-    totals = {"total_pipeline_cost": 0.0, 
-              "avg_latency_s": 0.0,
-              "max_latency_s": 0.0,
-              "avg_queue": 0.0,
-              "max_queue": 0.0,
-              "avg_throughput_rph": 0.0,
-              "max_throughput_rph":0.0}
+        metrics.redis.save_str("simulation_traffic", sim_name, traffic.traffic.to_csv(index=True))
+        
+        # TO DO: add SLA checks to the kubernetes objects, so they can be checked here.
+        # This sample code does the check, but it's not configurable by the user.
+        #sla_check = traffic.sla_check({"latency_sla_percent": 99.0, "latency_sla_limit": 70.0})
 
-    month_aggregations = {
-        'latency_fifo': 'mean',
-        'pipeline_cost': 'sum',
-        'queue_len': 'mean',
-        'hourly': 'sum',
-    }
-    for schema in traffic.traffic.columns:
-        if schema.startswith("task_") and schema.endswith("_rph"):
-            month_aggregations[schema] = 'sum'
-    
-    if "hourly_network_cost" in traffic.traffic.columns:
-         month_aggregations['bandwidth'] = 'sum'
-         month_aggregations['hourly_network_cost'] = 'sum'
-         month_aggregations['hourly_raw_data_store_cost'] = 'sum'
-    
-    df_monthly = traffic.traffic.groupby('Month').agg(month_aggregations).reset_index()
-    df_monthly.rename(columns={
-        "hourly_network_cost": "network_cost",
-        "hourly_raw_data_store_cost": "storage_cost"
-    }, inplace=True)
+        totals = {"total_pipeline_cost": 0.0, 
+                "avg_latency_s": 0.0,
+                "max_latency_s": 0.0,
+                "avg_queue": 0.0,
+                "max_queue": 0.0,
+                "avg_throughput_rph": 0.0,
+                "max_throughput_rph":0.0}
 
-    metrics.redis.save_str("simulation_monthly", sim_name, 
-        df_monthly.to_csv(index=True))
+        #month_aggregations = {
+        #    'latency_fifo': 'mean',
+        #    'pipeline_cost': 'sum',
+        #    'queue_len': 'mean',
+        #    'hourly': 'sum',
+        #}
+        month_aggregations = {}
 
-    if "hourly_network_cost" in traffic.traffic.columns:
-        totals["network_cost"] = float(traffic.traffic.hourly_network_cost.sum())
-        totals["storage_cost"] = float(traffic.traffic.hourly_raw_data_store_cost.sum())
-        totals["pipeline_cost"] = float(traffic.traffic.pipeline_cost.sum())
-        totals["total_cost"] = totals["network_cost"] + totals["storage_cost"] + totals["pipeline_cost"]
+        for schema in traffic.traffic.columns:
+            if schema.startswith("task_") and schema.endswith("_rph"):
+                month_aggregations[schema] = 'sum'
+        
+        if "hourly_network_cost" in traffic.traffic.columns:
+            month_aggregations['bandwidth'] = 'sum'
+            month_aggregations['hourly_network_cost'] = 'sum'
+            month_aggregations['hourly_raw_data_store_cost'] = 'sum'
+        
+        df_monthly = traffic.traffic.groupby('Month').agg(month_aggregations).reset_index()
+        df_monthly.rename(columns={
+            "hourly_network_cost": "network_cost",
+            "hourly_raw_data_store_cost": "storage_cost"
+        }, inplace=True)
 
-    metrics.redis.save_str("simulation_summary", sim_name, 
-        json.dumps(totals))
-    
-    return twin
+        metrics.redis.save_str("simulation_monthly", sim_name, 
+            df_monthly.to_csv(index=True))
 
+        if "hourly_network_cost" in traffic.traffic.columns:
+            totals["network_cost"] = float(traffic.traffic.hourly_network_cost.sum())
+            totals["storage_cost"] = float(traffic.traffic.hourly_raw_data_store_cost.sum())
+            totals["pipeline_cost"] = 0.0
+            totals["total_cost"] = totals["network_cost"] + totals["storage_cost"] + totals["pipeline_cost"]
+
+        metrics.redis.save_str("simulation_summary", sim_name, 
+            json.dumps(totals))
+        
 @dataclass
 class SimpleSchemaAwareModel(PipelineModel):
     policy: str
@@ -423,70 +487,6 @@ class AutoscalingModelFine(PipelineModel):
 
 
 
-def simulate(twin, traffic):
-    twin_name = os.environ['TWIN_NAME']
-    sim_name = os.environ['SIM_NAME']
-    traffic_model_name = os.environ['TRAFFIC_MODEL_NAME']
-    
-    #twin = SimpleModel.deserialize(open(f"fakeredis/twinmodel_{twin_name}.json").read())
-    #traffic = trafficmodel.TrafficModel.deserialize_parameters(open(f"fakeredis/trafficmodel_{traffic_model_name}.json").read())
-    #traffic.deserialize_forecast(f"fakeredis/trafficmodel_{traffic_model_name}.csv")
-    traffic.calculate(twin)
-    
-    metrics.redis.save_str("simulation_traffic", sim_name, traffic.traffic.to_csv(index=True))
-    
-    # TO DO: add SLA checks to the kubernetes objects, so they can be checked here.
-    # This sample code does the check, but it's not configurable by the user.
-    #sla_check = traffic.sla_check({"latency_sla_percent": 99.0, "latency_sla_limit": 70.0})
-
-    if "latency_fifo" in traffic.traffic.columns:
-        totals = {"total_pipeline_cost": float(traffic.traffic.pipeline_cost.sum()), 
-                "avg_latency_s": float(traffic.traffic.latency_fifo.mean()),
-                "max_latency_s": float(traffic.traffic.latency_fifo.max()), 
-                "avg_queue": float(traffic.traffic.queue_len.mean()),
-                "max_queue": float(traffic.traffic.queue_len.max()), 
-                "avg_throughput_rph": float(traffic.traffic.throughput.mean()),
-                "max_throughput_rph": float(traffic.traffic.throughput.max())}
-
-        month_aggregations = {
-            'latency_fifo': 'mean',
-            'pipeline_cost': 'sum',
-            'queue_len': 'mean',
-            'hourly': 'sum',
-        }
-    else:
-        month_aggregations = {}
-        totals = {}
-
-    for schema in traffic.traffic.columns:
-        if schema.startswith("task_") and schema.endswith("_rph"):
-            month_aggregations[schema] = 'sum'
-    
-    if "hourly_network_cost" in traffic.traffic.columns:
-         month_aggregations['bandwidth'] = 'sum'
-         month_aggregations['hourly_network_cost'] = 'sum'
-         month_aggregations['hourly_raw_data_store_cost'] = 'sum'
-    
-    df_monthly = traffic.traffic.groupby('Month').agg(month_aggregations).reset_index()
-    df_monthly.rename(columns={
-        "hourly_network_cost": "network_cost",
-        "hourly_raw_data_store_cost": "storage_cost"
-    }, inplace=True)
-
-    metrics.redis.save_str("simulation_monthly", sim_name, 
-        df_monthly.to_csv(index=True))
-
-    if "hourly_network_cost" in traffic.traffic.columns:
-        totals["network_cost"] = float(traffic.traffic.hourly_network_cost.sum())
-        totals["storage_cost"] = float(traffic.traffic.hourly_raw_data_store_cost.sum())
-        if "pipeline_cost" in traffic.traffic.columns:
-            totals["pipeline_cost"] = float(traffic.traffic.pipeline_cost.sum())
-            totals["total_cost"] = totals["network_cost"] + totals["storage_cost"] + totals["pipeline_cost"]
-
-    metrics.redis.save_str("simulation_summary", sim_name, 
-        json.dumps(totals))
-    
-    return twin
 
 
 

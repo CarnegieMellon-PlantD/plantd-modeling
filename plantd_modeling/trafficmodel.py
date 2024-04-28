@@ -171,7 +171,8 @@ class TrafficModel(dict):
         t["model_name"] = params["model_name"]
         return t
     
-    def calculate(self):
+    def calculate(self, pipeline_model):
+        self.pipeline_model = pipeline_model
         if not hasattr(self, "pipeline_model"):
             raise "Wind tunnel measurements not set"
         if not hasattr(self, "traffic"):
@@ -219,15 +220,3 @@ class TrafficModel(dict):
             print(f"Latency SLA is met: latency was less than {sla['latency_sla_limit']}s/record {pct_latency_met}% of the time; it only needed to be met {sla['latency_sla_percent']}%")
         return {"sla_met": str(pct_latency_met >= sla["latency_sla_percent"]), "pct_latency_met": pct_latency_met}
     
-    def calculate_throughput(self, pipeline_model):
-        self.pipeline_model = pipeline_model
-        print(f"Calculating throughput")
-        self.calculate()
-        return self.traffic.throughput
-    
-    def calculate_queue(self,  pipeline_model):
-        self.pipeline_model = pipeline_model
-        print(f"Calculating queue")
-        self.calculate()
-        return self.traffic.queue_len
-        
