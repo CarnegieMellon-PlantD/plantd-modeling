@@ -324,7 +324,7 @@ class Pipeline:
         return p
 
 class ConfigurationConnectionEnvVars:
-    def __init__(self):
+    def __init__(self, require_load_patterns=True):
         self.experiments  = {}
         self.load_patterns = {}
         self.datasets = {}
@@ -355,7 +355,10 @@ class ConfigurationConnectionEnvVars:
             try:
                 exp.load_patterns = {k:self.load_patterns[v] for k,v in exp.load_pattern_names.items()}
             except  KeyError as ke:
-                raise Exception(f"Load patterns of experiment {exp.experiment_name} not found: {ke}")
+                if require_load_patterns:
+                    raise Exception(f"Load patterns of experiment {exp.experiment_name} not found: {ke}")
+                else:
+                    print(f"Load patterns of experiment {exp.experiment_name} not found (but not required): {ke}")
 
         self.scenario = None
         self.netcosts = None

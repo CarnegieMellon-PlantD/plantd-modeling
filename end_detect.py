@@ -8,7 +8,7 @@ import datetime
 import pytz
 
 
-config = configuration.ConfigurationConnectionEnvVars()
+config = configuration.ConfigurationConnectionEnvVars(require_load_patterns=False)
 DEBOUNCE_PERIOD = int(os.environ['DEBOUNCE_PERIOD'])
 QUERY_WINDOW = int(os.environ['QUERY_WINDOW'])
 POD_DETACH_ADJUSTMENT = int(os.environ['POD_DETACH_ADJUSTMENT'])
