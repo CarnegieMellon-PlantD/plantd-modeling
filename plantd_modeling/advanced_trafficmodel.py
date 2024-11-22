@@ -230,7 +230,10 @@ class AdvancedTrafficModel(dict):
             self.traffic.iloc[p,queueloc] = len(self.pipeline_model.queue)
             self.traffic.iloc[p,pipeline_cost] = self.pipeline_model.hourcost
             self.traffic.iloc[p,cumu_pipeline_cost] = self.pipeline_model.cumu_pipeline_cost
-            self.traffic.iloc[p,pipeline_cost_per_rec] = self.pipeline_model.hourcost / self.pipeline_model.throughput_rph
+            if self.pipeline_model.throughput_rph is None:
+                self.traffic.iloc[p,pipeline_cost_per_rec] = 0
+            else:
+                self.traffic.iloc[p,pipeline_cost_per_rec] = self.pipeline_model.hourcost / self.pipeline_model.throughput_rph
             #self.traffic.iloc[p,scaleout] = self.pipeline_model.numproc
             
     def sla_check(self, sla):
