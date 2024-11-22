@@ -206,8 +206,12 @@ class SimpleSchemaAwareModel(PipelineModel):
             if self.time_done > self.time + 1: break
 
         
-        self.throughput_rph = proc_this_hour / (self.time_done - old_time_done)
-        self.latency_fifo_s = sum_latency/proc_this_hour
+        try:
+            self.throughput_rph = proc_this_hour / (self.time_done - old_time_done)
+            self.latency_fifo_s = sum_latency/proc_this_hour
+        except:
+            self.throughput_rph = 0   # meaningless if no data was processed
+            self.latency_fifo_s = 0   # meaningless if no data was processed
         #self.queue_worstcase_age_s += 3600
        
         #self.latency_lifo = self.avg_latency_s + self.queue_worstcase_age_s
